@@ -1,0 +1,11 @@
+#ifndef _CONFIG_H
+#define _CONFIG_H
+
+#define SOFT_VERSION_MAJOR @SOFT_VERSION_MAJOR@
+#define SOFT_VERSION_MINOR @SOFT_VERSION_MINOR@
+
+#cmakedefine USE_HDF5
+#cmakedefine USE_MATLAB
+#cmakedefine USE_MPI
+
+#endif/*_CONFIG_H*/
