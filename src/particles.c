@@ -475,7 +475,7 @@ particle *particles_generate_distributed(void) {
 		}
 	}
 
-	if (r0 <= r) {
+	if (r0 < r) {
 		return particles_generate_at(r, param1, param2);
 	} else if (particles_done) {
 		return NULL;
@@ -538,7 +538,7 @@ particle *particles_generate_queue(void) {
 		}
 	}
 
-	if (r0 <= r)
+	if (r0 < r)
 		return particles_generate_at(r, param1, param2);
 	else if (particles_g_done)
 		return NULL;
