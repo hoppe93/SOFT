@@ -21,6 +21,7 @@ mathematical details of how SOFT is implemented, you should look into the
   pifiles
   magnetic
   distributions
+  paramref
 
 
 Indices and tables
