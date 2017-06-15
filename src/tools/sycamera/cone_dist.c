@@ -291,11 +291,7 @@ void cone_dist_get_angles(
            rcpz = rcp->val[2] + dX*e1->val[2] + dY*e2->val[2];
     double r = sqrt(rcpx*rcpx + rcpy*rcpy + rcpz*rcpz);
 
-	//printf("x=%e,  y=%e,  z=%e     ::     vx=%e,  vy=%e,  vz=%e      ===      ", rcpx, rcpy, rcpz, vhat->val[0], vhat->val[1], vhat->val[2]);
-
     *cosmu = -(rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
-	//printf("cosmu = %e,  mu = %e\n", (*cosmu), acos((*cosmu)));
-    //*cosmu = (rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
     *sinmu2= 1 - (*cosmu)*(*cosmu);
     *sinmu = sqrt(*sinmu2);
 }
@@ -350,11 +346,9 @@ double cone_dist_get_intensity(
 		r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2],
 		weight = vdot3(rcp, ddet) / sqrt(r2);
 
-	/*
     if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
     //if (!cone_dist_can_radiation_hit2(sd, empty1, empty2))
         return 0.0;
-	*/
 
     dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
     dX2 = dX+dX;
