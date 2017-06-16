@@ -709,18 +709,20 @@ double particles_get_drho(void) {
 }
 
 double particles_compute_X_pol(double ppar, double pperp, double r) {
-	double Beffx, Beffz, Xdotr, Xdotz;
+	double Beffx, Beffy, Beffz, Beffpar, Xdotr, Xdotz;
 	diff_data *dd;
 
 	dd = magnetic_field_diff(r, 0.0, magnetic_axis_z);
 
 	Beffx = dd->B->val[0] - ppar/CHARGE * dd->curlB->val[0],
+	Beffy = dd->B->val[1] - ppar/CHARGE * dd->curlB->val[1],
 	Beffz = dd->B->val[2] - ppar/CHARGE * dd->curlB->val[2];
+	Beffpar = fabs((Beffx*dd->B->val[0] + Beffy*dd->B->val[1] + Beffz*dd->B->val[2]) / dd->Babs);
 
 	Xdotr = ppar*Beffx + pperp*pperp / (2.0*CHARGE*dd->Babs*dd->Babs) * (dd->gradB->val[1]*dd->B->val[2] - dd->gradB->val[2]*dd->B->val[1]),
 	Xdotz = ppar*Beffz + pperp*pperp / (2.0*CHARGE*dd->Babs*dd->Babs) * (dd->gradB->val[0]*dd->B->val[1] - dd->gradB->val[1]*dd->B->val[0]);
 
-	return hypot(Xdotr, Xdotz);
+	return hypot(Xdotr, Xdotz) / Beffpar;
 }
 double particles_find_axis_r(double ppar, double pperp) {
 	double a = particles_rinner, b = particles_router, c, d, tol = 1e-4,

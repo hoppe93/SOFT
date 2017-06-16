@@ -23,6 +23,7 @@ A basic ``pi`` file can look like the following::
 
   # Set phase-space
   particles {
+      t=0,-1
       rdyn=0.84,1000
       p=3e7,3e7,1
       pitch=0.15,0.15,1
@@ -38,7 +39,7 @@ A basic ``pi`` file can look like the following::
       radiation=synchrotron_spectrum # Take spectrum of radiation into account
       spectrum=5e-7,1e-6             # Detector spectral range
       toroidal_resolution=3500       # Number of steps in toroidal integral
-      vision_angle=0.7               # Size of field-of-view
+      vision_angle=2.0               # Size of field-of-view
   }
 
   # Specify properties for the 'image' sycout

@@ -110,7 +110,7 @@ void cone_dist_init_step(step_data *sd) {
 	cone_dist_beta2 = cone_dist_beta*cone_dist_beta;
 	cone_dist_gammai2 = 1 - cone_dist_beta2;
 	cone_dist_gamma3 = 1/(cone_dist_gammai2*sqrt(cone_dist_gammai2));
-    cone_dist_costheta = sd->vpar / cone_dist_speed;
+    cone_dist_costheta = fabs(sd->vpar / cone_dist_speed);
     cone_dist_sintheta = sd->vperp / cone_dist_speed;
 	cone_dist_betapar = cone_dist_beta*cone_dist_costheta;
 	cone_dist_betapar2 = cone_dist_betapar*cone_dist_betapar;
@@ -291,8 +291,7 @@ void cone_dist_get_angles(
            rcpz = rcp->val[2] + dX*e1->val[2] + dY*e2->val[2];
     double r = sqrt(rcpx*rcpx + rcpy*rcpy + rcpz*rcpz);
 
-    //*cosmu = -(rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
-    *cosmu = (rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
+    *cosmu = -(rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
     *sinmu2= 1 - (*cosmu)*(*cosmu);
     *sinmu = sqrt(*sinmu2);
 }
