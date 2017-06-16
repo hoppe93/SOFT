@@ -8,6 +8,8 @@
 #file(GLOB SOURCES "tools/sycamera/*.c")
 #add_executable(soft ${SOURCES})
 
+set(CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/Modules/" CACHE PATH "CMake module path" FORCE)
+
 include_directories("${PROJECT_SOURCE_DIR}/src/include")
 
 # Set libraries to use
