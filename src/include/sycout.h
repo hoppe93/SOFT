@@ -54,7 +54,7 @@ enum sycout_green_type {
 	SYCOUT_GREEN_IMAGE,
 	SYCOUT_GREEN_SPECTRUM,
 	SYCOUT_GREEN_TOTAL,
-	SYCOUT_GREEN_BOTH
+	SYCOUT_GREEN_FULL
 };
 
 void sycout_green_init(struct general_settings*);

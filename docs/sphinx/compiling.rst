@@ -1,5 +1,5 @@
-Compiling SOFT
-==============
+Compiling
+=========
 SOFT is written in C, and as such is straightforward to setup on a Linux system. While SOFT hasn't
 been tested on any other system, it should be possible compile and run on for example Windows and
 Mac with some additional effort.

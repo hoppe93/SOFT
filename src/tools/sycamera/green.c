@@ -20,7 +20,7 @@ int sycout_green_nvel1, sycout_green_nvel2,
 	sycout_green_ivel1, sycout_green_ivel2,
 	sycout_green_irad,
 	sycout_green_cvel2, sycout_green_cvel1,
-	sycout_green_cpixels, sycout_green_cpixels2;
+	sycout_green_crad, sycout_green_cwav;
 
 size_t sycout_green_func_sz;
 
@@ -51,8 +51,8 @@ void sycout_green_init(struct general_settings *settings) {
 			sycout_green_pixels  = atoi(settings->value[i]);
 			sycout_green_pixels2 = sycout_green_pixels*sycout_green_pixels;
 		} else if (!strcmp(settings->setting[i], "function")) {
-			if (!strcmp(settings->value[i], "both")) {
-				sycout_green_tp = SYCOUT_GREEN_BOTH;
+			if (!strcmp(settings->value[i], "full")) {
+				sycout_green_tp = SYCOUT_GREEN_FULL;
 			} else if (!strcmp(settings->value[i], "image")) {
 				sycout_green_tp = SYCOUT_GREEN_IMAGE;
 			} else if (!strcmp(settings->value[i], "spectrum")) {
@@ -76,7 +76,7 @@ void sycout_green_init(struct general_settings *settings) {
 	}
 
 	/* Green's function type */
-	if (sycout_green_tp == SYCOUT_GREEN_IMAGE || sycout_green_tp == SYCOUT_GREEN_BOTH) {
+	if (sycout_green_tp == SYCOUT_GREEN_IMAGE || sycout_green_tp == SYCOUT_GREEN_FULL) {
 		if (sycout_green_pixels <= 0) {
 			fprintf(stderr, "ERROR: The number of pixels for the Green's function has not been set.\n");
 			exit(-1);
@@ -118,23 +118,27 @@ void sycout_green_init_run(void) {
 			if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {
 				size = sycout_green_pixels2*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad;
 
-				sycout_green_cvel1   = sycout_green_nvel2;
-				sycout_green_cpixels  = sycout_green_cvel1*sycout_green_nvel1;
-				sycout_green_cpixels2 = sycout_green_cpixels*sycout_green_pixels;
+				sycout_green_cvel2 = sycout_green_pixels*sycout_green_pixels;
+				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
+				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {
 				size = sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad*sycout_green_nwav;
 
-				sycout_green_cvel1 = sycout_green_nvel2;
+				sycout_green_cvel2 = sycout_green_nwav;
+				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
+				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			} else if (sycout_green_tp == SYCOUT_GREEN_TOTAL) {
 				size = sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad;
 
+				sycout_green_cvel2 = 1;
 				sycout_green_cvel1 = sycout_green_nvel2;
+				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			} else {/* Both */
 				size = sycout_green_pixels2*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad*sycout_green_nwav;
 
-				sycout_green_cvel1   = sycout_green_nvel2;
-				sycout_green_cpixels  = sycout_green_cvel1*sycout_green_nvel1;
-				sycout_green_cpixels2 = sycout_green_cpixels*sycout_green_pixels;
+				sycout_green_cvel2 = sycout_green_pixels*sycout_green_pixels*sycout_green_nwav;
+				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
+				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			}
 			
 			/* Print note about how much memory is required */
@@ -177,19 +181,29 @@ void sycout_green_step(struct sycout_data *data) {
 		index;
 	
 	if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {	/* IMAGE */
+		/*
 		index = i * sycout_green_cpixels2 +
 				j * sycout_green_cpixels  +
 				sycout_green_ivel1 * sycout_green_cvel1 +
 				sycout_green_ivel2;
-
 		index = index*sycout_green_nrad + sycout_green_irad;
+		*/
+		index = sycout_green_irad * sycout_green_crad +
+				sycout_green_ivel1 * sycout_green_cvel1 +
+				sycout_green_ivel2 * sycout_green_cvel2 +
+				i * sycout_green_pixels + j;
 
 		sycout_green_func[index] += data->brightness * data->RdPhi * data->Jdtdrho / particles_get_drho();
 	} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {	/* SPECTRUM */
+		/*
 		index = sycout_green_ivel1 * sycout_green_cvel1 +
 				sycout_green_ivel2;
 		index = index*sycout_green_nrad + sycout_green_irad;
 		index *= sycout_green_nwav;
+		*/
+		index = sycout_green_irad * sycout_green_crad +
+				sycout_green_ivel1 * sycout_green_cvel1 +
+				sycout_green_ivel2 * sycout_green_cvel2;
 
 		double *spectrum = sycamera_spectrum_get();
 		double diffel = data->RdPhi * data->Jdtdrho;
@@ -197,24 +211,35 @@ void sycout_green_step(struct sycout_data *data) {
 		for (i = 0; i < sycout_green_nwav; i++) {
 			sycout_green_func[index+i] += spectrum[i] * diffel;
 		}
-	} else if (sycout_green_tp == SYCOUT_GREEN_BOTH) {	/* BOTH */
+	} else if (sycout_green_tp == SYCOUT_GREEN_FULL) {	/* FULL */
+		/*
 		index = i * sycout_green_cpixels2 +
 				j * sycout_green_cpixels  +
 				sycout_green_ivel1 * sycout_green_cvel1 +
 				sycout_green_ivel2;
-
 		index = index*sycout_green_nrad + sycout_green_irad;
 		index *= sycout_green_nwav;
+		*/
+		index = sycout_green_irad * sycout_green_crad +
+				sycout_green_ivel1 * sycout_green_cvel1 +
+				sycout_green_ivel2 * sycout_green_cvel2 +
+				i * sycout_green_pixels + j;
 
 		double *spectrum = sycamera_spectrum_get();
 		double diffel = data->RdPhi * data->Jdtdrho / particles_get_drho();
-		for (i = 0; i < sycout_green_nwav; i++) {
-			sycout_green_func[index+i] += spectrum[i] * diffel;
+		int si, gi, pixels2 = sycout_green_pixels*sycout_green_pixels;
+		for (si = gi = 0; si < sycout_green_nwav; si++, gi += pixels2) {
+			sycout_green_func[index+gi] += spectrum[si] * diffel;
 		}
 	} else if (sycout_green_tp == SYCOUT_GREEN_TOTAL) {	/* TOTAL */
+		/*
 		index = sycout_green_ivel1 * sycout_green_cvel1 +
 				sycout_green_ivel2;
 		index = index*sycout_green_nrad + sycout_green_irad;
+		*/
+		index = sycout_green_irad * sycout_green_crad +
+				sycout_green_ivel1 * sycout_green_cvel1 +
+				sycout_green_ivel2;
 
 		double diffel = data->RdPhi * data->Jdtdrho / particles_get_drho();
 		sycout_green_func[index] += data->brightness * diffel;
@@ -260,7 +285,7 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 			case SYCOUT_GREEN_TOTAL:
 				sf->write_string(sf, "type", "total", 5);
 				break;
-			case SYCOUT_GREEN_BOTH:
+			case SYCOUT_GREEN_FULL:
 				sf->write_string(sf, "type", "both", 4);
 				break;
 			default:
