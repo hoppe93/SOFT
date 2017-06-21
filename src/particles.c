@@ -257,15 +257,9 @@ void particles_local_gridsize(int grid[3]) {
  * Returned in 'grid'
  */
 void particles_indices(int grid[3]) {
-	if (particles_gentype == PARTICLES_GT_QUEUE) {
-		grid[0] = particles_g_r-1;
-		grid[1] = particles_g_param1-1;
-		grid[2] = particles_g_param2-1;
-	} else {
-		grid[0] = particles_r-1;
-		grid[1] = particles_param1-1;
-		grid[2] = particles_param2-1;
-	}
+	grid[0] = particles_r-1;
+	grid[1] = particles_param1-1;
+	grid[2] = particles_param2-1;
 
 	if (grid[0] < 0) grid[0] = particles_rn-1;
 	if (grid[1] < 0) grid[1] = particles_param1n-1;
@@ -540,6 +534,10 @@ particle *particles_generate_queue(void) {
 				}
 			}
 		}
+
+		particles_r = particles_g_r;
+		particles_param1 = particles_g_param1;
+		particles_param2 = particles_g_param2;
 	}
 
 	if (r0 <= r) {
