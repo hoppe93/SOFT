@@ -34,7 +34,9 @@ int particles_r=0, particles_param1=0, particles_param2=0,
 	particles_done=0,
 /* Local boundary points for particles, i.e. local to this thread */
 	particles_rend, particles_param1end, particles_param2end,
-	particles_count;
+	particles_count,
+/* Variables to keep track of where we are */
+	particles_curr_r, particles_curr_param1, particles_curr_param2;
 
 /* Variables used when particles are generated centrally */
 int particles_g_r=0, particles_g_param1=0, particles_g_param2=0,
@@ -60,7 +62,7 @@ struct particles_paramspec params[NPARAMS] = {
 	particles_param20,particles_param21,particles_rend,particles_count,particles_param1end,particles_param2end, \
 	particles_r,particles_param1,particles_param2,particles_dr,particles_dparam1,particles_dparam2, \
 	particles_done,particles_param1spec,particles_param2spec,particles_diffel,particles_gentype, \
-	particles_rcoord, particles_rinner, particles_router)
+	particles_rcoord, particles_rinner, particles_router,particles_curr_r,particles_curr_param1,particles_curr_param2)
 
 void particles_set_param(double val0, double val1, int n, enum particles_inputtype type) {
 	int i;
@@ -248,24 +250,6 @@ void particles_local_gridsize(int grid[3]) {
 	}
 }
 /**
- * Returns the indices to the particles currently
- * being treated:
- *   [0] = ir
- *   [1] = iparam1
- *   [2] = iparam2
- *
- * Returned in 'grid'
- */
-void particles_indices(int grid[3]) {
-	grid[0] = particles_r-1;
-	grid[1] = particles_param1-1;
-	grid[2] = particles_param2-1;
-
-	if (grid[0] < 0) grid[0] = particles_rn-1;
-	if (grid[1] < 0) grid[1] = particles_param1n-1;
-	if (grid[2] < 0) grid[2] = particles_param2n-1;
-}
-/**
  * This function can be called at any point during execution.
  */
 int particles_get_gridsize(struct particlespec *spec) {
@@ -441,6 +425,10 @@ particle *particles_generate_distributed(void) {
 	double param1 = particles_param10 + particles_dparam1*particles_param1;
 	double param2 = particles_param20 + particles_dparam2*particles_param2;
 
+	particles_curr_r = particles_r;
+	particles_curr_param1 = particles_param1;
+	particles_curr_param2 = particles_param2;
+
 	if (particles_rcoord == PARTICLES_RC_DYNAMIC) {
 		double ppar, pperp, pabs2;
 		particles_params2p(param1, param2, &ppar, &pperp, &pabs2);
@@ -502,6 +490,10 @@ particle *particles_generate_queue(void) {
 		param1 = particles_param10 + particles_dparam1*particles_g_param1;
 		param2 = particles_param20 + particles_dparam2*particles_g_param2;
 
+		particles_curr_r = particles_g_r;
+		particles_curr_param1 = particles_g_param1;
+		particles_curr_param2 = particles_g_param2;
+
 		if (particles_rcoord == PARTICLES_RC_DYNAMIC) {
 			double ppar, pperp, pabs2;
 			particles_params2p(param1, param2, &ppar, &pperp, &pabs2);
@@ -534,10 +526,6 @@ particle *particles_generate_queue(void) {
 				}
 			}
 		}
-
-		particles_r = particles_g_r;
-		particles_param1 = particles_g_param1;
-		particles_param2 = particles_g_param2;
 	}
 
 	if (r0 <= r) {
@@ -675,6 +663,9 @@ particle *particles_generate_at(double r, double param1, double param2) {
 	particles_part->r0[0] = r;
 	particles_part->r0[1] = 0;
 	particles_part->r0[2] = magnetic_axis_z;
+	particles_part->ir    = particles_curr_r;
+	particles_part->iv1   = particles_curr_param1;
+	particles_part->iv2   = particles_curr_param2;
 
 	particles_part->diffel = particles_get_differential_element(param1, param2) * particles_dr;
 

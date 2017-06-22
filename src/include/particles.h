@@ -12,6 +12,7 @@ typedef struct {
 	double *r0;
 	double diffel;		/* Differential element */
 	int gc_position;	/* If 1, assumes the guiding-center position (rather than particle pos.) to be given */
+	int ir, iv1, iv2;	/* Radial index, velocity 1 & 2 indices */
 } particle;
 
 enum particles_inputtype {

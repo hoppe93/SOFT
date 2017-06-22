@@ -166,12 +166,9 @@ void sycout_green_init_run(void) {
 }
 void sycout_green_init_particle(particle *p) {
 	/* Set indices */
-	int indices[3];
-	particles_indices(indices);
-
-	sycout_green_irad  = indices[0];
-	sycout_green_ivel1 = indices[1];
-	sycout_green_ivel2 = indices[2];
+	sycout_green_irad  = p->ir;
+	sycout_green_ivel1 = p->iv1;
+	sycout_green_ivel2 = p->iv2;
 }
 
 void sycout_green_deinit_run(void) {}
