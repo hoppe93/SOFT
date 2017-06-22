@@ -350,7 +350,6 @@ void sycamera_step(ode_solution *solver_object, step_data *sd) {
  * RdPhi: Cartesian length of toroidal step
  */
 void sycamera_register_radiation(double i, double j, step_data *sd, double intensity, double RdPhi) {
-	double differential;
 	struct sycout_data data;
 	data.sd = sd;
 	//data.differential = RdPhi * sd->Jdtdrho * sycamera_particle_diffel;
@@ -365,8 +364,8 @@ void sycamera_register_radiation(double i, double j, step_data *sd, double inten
 	data.i = i;
 	data.j = j;
 
-	differential = data.RdPhi * data.Jdtdrho * data.particle_diffel * data.distribution_function;
-	data.brightness = intensity * differential;
+	data.differential = data.RdPhi * data.Jdtdrho * data.particle_diffel * data.distribution_function;
+	data.brightness = intensity;
 
 	if (DEBUG_OUTPUT)
 		print_particle_struct(sd);
@@ -447,17 +446,7 @@ int sycamera_process_step(step_data *sd, double RdPhi) {
 			return 0;
 		}
 
-		//if (sycamera_lasti == i && sycamera_lastj == j && sycamera_lasti >= 0)
-			//double r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2];
-			sycamera_register_radiation(i, j, sd, intensity, RdPhi);
-		/*
-		else
-			sycamera_interp_pixels(
-				l->val[1]+img_side2, l->val[2]+img_side2, abs(sycamera_lasti-i),
-				abs(sycamera_lastj-j), img_side, sd, intensity, dt, dPhi
-			);
-
-		*/
+		sycamera_register_radiation(i, j, sd, intensity, RdPhi);
 		return 1;
 	} else {
 		return 0;

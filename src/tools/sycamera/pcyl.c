@@ -59,7 +59,7 @@ void sycamera_pcyl_init_run(void) {
  * xi: Cosine of the pitch angle
  * Bmag: Magnetic field strength in the point of evaluation
  */
-double sycamera_pcyl_int(double ppar2, double pperp2, double Bmag, double mass) {
+double sycamera_pcyl_int(double ppar2, double pperp2, double Bmag, double mass, double fraction) {
     double ic = 1/((LIGHTSPEED*LIGHTSPEED)*mass*mass);
     double ppar2l = ppar2*ic;
     double pperp2l = pperp2*ic;
@@ -91,7 +91,7 @@ double sycamera_pcyl_int(double ppar2, double pperp2, double Bmag, double mass) 
         }
 
 		double e = gsl_spline_eval(sycamera_pcyl_spline, lb, sycamera_pcyl_acc);
-		double c = pf * e;
+		double c = pf * e * fraction;
 		sycamera_pcyl_comp[i] = c;
         sum += c;
     }
@@ -154,7 +154,7 @@ void sycamera_pdist_test(void) {
 		sycamera_pcyl_init(lambda1,lambda0,50);
 
 		//intensity = sycamera_pdist_int(1 / gamma2, sin2p, beta2*cos2p, beta2, B, s2mu);
-        intensity = sycamera_pcyl_int(ppar2, pperp2, B, mass);
+        intensity = sycamera_pcyl_int(ppar2, pperp2, B, mass, 1.0);
 
 		fprintf(f, "%.12e \t %.12e\n", mu, intensity);
 	}

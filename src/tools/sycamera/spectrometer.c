@@ -84,7 +84,7 @@ void sycout_spectrometer_step(struct sycout_data *data) {
 	int i;
 	double *p = sycamera_spectrum_get();
 	for (i = 0; i < sycout_spectrometer_nlambdas; i++) {
-		sycout_spectrometer_lresult[i] += p[i];
+		sycout_spectrometer_lresult[i] += p[i] * data->differential;
 	}
 
 	sycout_spectrometer_lcounts++;

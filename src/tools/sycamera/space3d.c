@@ -114,7 +114,7 @@ void sycout_space3d_step(struct sycout_data *sd) {
 	space3d_map->x[i] = sd->sd->x;
 	space3d_map->y[i] = sd->sd->y;
 	space3d_map->z[i] = sd->sd->z;
-	space3d_map->intensity[i] = sd->brightness;
+	space3d_map->intensity[i] = sd->brightness * sd->differential;
 }
 void sycout_space3d_write(int mpi_rank, int nprocesses) {
 	FILE *f;

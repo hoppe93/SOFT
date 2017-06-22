@@ -134,14 +134,14 @@ int *sphere_get_spectrum_length(void);
 /* Functions for spectrum weighting */
 void sycamera_spectrum_init(double, double, int);
 void sycamera_spectrum_init_run(void);
-double sycamera_spectrum_weight(step_data*, double);
+double sycamera_spectrum_weight(step_data*, double, double);
 double *sycamera_spectrum_get_wavelengths(void);
 double *sycamera_spectrum_get(void);
 int sycamera_spectrum_length(void);
 
 void sycamera_pcyl_init(double, double, int);
 void sycamera_pcyl_init_run(void);
-double sycamera_pcyl_int(double, double, double, double);
+double sycamera_pcyl_int(double, double, double, double, double);
 double *sycamera_pcyl_get_wavelengths(void);
 double *sycamera_pcyl_get_spectrum(void);
 int sycamera_pcyl_get_spectrum_length(void);

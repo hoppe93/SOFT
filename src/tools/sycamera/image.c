@@ -102,11 +102,11 @@ void sycout_image_step(struct sycout_data *data) {
 	//if (j < 490 || j > 510) return;
 
 	if (sycout_image_brightness == SYCOUT_IMAGE_TYPE_INTENSITY)
-		sycout_image_camim->canvas[j][i] += data->brightness;
+		sycout_image_camim->canvas[j][i] += data->brightness * data->differential;
 	else if (sycout_image_brightness == SYCOUT_IMAGE_TYPE_HIST)
-		sycout_image_camim->canvas[j][i] += 1;
+		sycout_image_camim->canvas[j][i] += data->differential;
 	else if (sycout_image_brightness == SYCOUT_IMAGE_TYPE_BW)
-		sycout_image_camim->canvas[j][i] = 1;
+		sycout_image_camim->canvas[j][i] = data->differential;
 }
 
 /*

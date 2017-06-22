@@ -15,11 +15,11 @@ void sycamera_spectrum_init(double lambda0, double lambda1, int res) {
 void sycamera_spectrum_init_run(void) {
     sycamera_pcyl_init_run();
 }
-double sycamera_spectrum_weight(step_data *sd, double mass) {
+double sycamera_spectrum_weight(step_data *sd, double mass, double fraction) {
 /*
     if (sycamera_pas2_valid(sd->ppar2, sd->pperp2, sd->B, mass))
         return sycamera_pas2_int();
-    else*/ return sycamera_pcyl_int(sd->ppar2, sd->pperp2, sd->B, mass);
+    else*/ return sycamera_pcyl_int(sd->ppar2, sd->pperp2, sd->B, mass, fraction);
 }
 double *sycamera_spectrum_get_wavelengths(void) {
 	return sycamera_pcyl_get_wavelengths();

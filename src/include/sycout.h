@@ -21,7 +21,7 @@ enum sycout_mpiid {
 struct sycout_data {
     step_data *sd;      /* General information about step */
     double brightness;  /* Brightness in point */
-	//double differential;/* Differential element */
+	double differential;/* Differential element */
 	double RdPhi;		/* Toroidal differential element */
 	double Jdtdrho;		/* Poloidal trajectory differential */
 	double particle_diffel;/* Particle differential element */

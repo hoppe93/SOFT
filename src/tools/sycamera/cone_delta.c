@@ -84,9 +84,10 @@ double cone_delta_get_intensity(
 			totalP+= 2/E0p0 * Fx;
 
     		//totalP = gamma*(log(2*gamma) - 1./3.);
+			totalP *= fraction;
 			
     	} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_CONSTANT) {
-    		totalP = 1.;
+    		totalP = fraction;
     	} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON) {
     		double q2 = cone_delta_charge*cone_delta_charge;
 			double betapar = sd->vpar / LIGHTSPEED;
@@ -96,15 +97,17 @@ double cone_delta_get_intensity(
 			double c3 = LIGHTSPEED*LIGHTSPEED*LIGHTSPEED;
 			double m2 = cone_delta_mass*cone_delta_mass, m4 = m2*m2;
     		totalP = q2*q2*sd->B*sd->B*sd->pperp2*gammapar2*(1-betapar*cospitch)/(6*PI*EPS0*c3*m4);
+
+			totalP *= fraction;
     	} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
-    		totalP = sycamera_spectrum_weight(sd, cone_delta_mass);
+    		totalP = sycamera_spectrum_weight(sd, cone_delta_mass, fraction);
     	} else {
     		fprintf(stderr, "ERROR: Unrecognized radiation type selected: %d\n", cone_delta_radiation_type);
     		exit(1);
     	}
     }
 
-    return fraction*totalP;
+    return totalP;
 }
 
 /**

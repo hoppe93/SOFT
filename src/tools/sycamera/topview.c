@@ -96,7 +96,7 @@ void sycout_topview_step(struct sycout_data *data) {
     int j = (int)round(data->sd->y/sycout_topview_majorradius * sycout_topview_camim->pixels/2.0)+sycout_topview_camim->pixels/2;
 
     if (sycout_topview_brightness == SYCOUT_TOPVIEW_TYPE_INTENSITY)
-        sycout_topview_camim->canvas[j][i] += data->brightness;
+        sycout_topview_camim->canvas[j][i] += data->brightness * data->differential;
 	else if (sycout_topview_brightness == SYCOUT_TOPVIEW_TYPE_HIST)
 		sycout_topview_result->canvas[j][i] += 1;
     else
