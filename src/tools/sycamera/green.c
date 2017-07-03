@@ -16,11 +16,13 @@
 
 int sycout_green_nvel1, sycout_green_nvel2,
 	sycout_green_nrad, sycout_green_nwav,
-	sycout_green_pixels, sycout_green_pixels2,
+	sycout_green_pixels,
 	sycout_green_ivel1, sycout_green_ivel2,
 	sycout_green_irad,
 	sycout_green_cvel2, sycout_green_cvel1,
-	sycout_green_crad, sycout_green_cwav;
+	sycout_green_crad, sycout_green_cwav,
+	sycout_green_subpixels,
+	sycout_green_suboffseti, sycout_green_suboffsetj;
 
 size_t sycout_green_func_sz;
 
@@ -40,6 +42,10 @@ void sycout_green_init(struct general_settings *settings) {
 	sycout_green_func = NULL;
 	sycout_green_func_sz = 0;
 
+	sycout_green_suboffseti = 0;
+	sycout_green_suboffsetj = 0;
+	sycout_green_subpixels  = 0;
+
 	int i, outformat_set=0;
 	for (i = 0; i < settings->n; i++) {
 		if (!strcmp(settings->setting[i], "format")) {
@@ -49,7 +55,12 @@ void sycout_green_init(struct general_settings *settings) {
 			sycout_green_output = settings->value[i];
 		} else if (!strcmp(settings->setting[i], "pixels")) {
 			sycout_green_pixels  = atoi(settings->value[i]);
-			sycout_green_pixels2 = sycout_green_pixels*sycout_green_pixels;
+		} else if (!strcmp(settings->setting[i], "suboffseti")) {
+			sycout_green_suboffseti = atoi(settings->value[i]);
+		} else if (!strcmp(settings->setting[i], "suboffsetj")) {
+			sycout_green_suboffsetj = atoi(settings->value[i]);
+		} else if (!strcmp(settings->setting[i], "subpixels")) {
+			sycout_green_subpixels = atoi(settings->value[i]);
 		} else if (!strcmp(settings->setting[i], "function")) {
 			if (!strcmp(settings->value[i], "full")) {
 				sycout_green_tp = SYCOUT_GREEN_FULL;
@@ -81,9 +92,21 @@ void sycout_green_init(struct general_settings *settings) {
 			fprintf(stderr, "ERROR: The number of pixels for the Green's function has not been set.\n");
 			exit(-1);
 		}
+
+		/* Verify pixel bounds */
+		if (sycout_green_subpixels == 0)
+			sycout_green_subpixels = sycout_green_pixels;
+		
+		if (sycout_green_suboffseti+sycout_green_subpixels > sycout_green_pixels) {
+			fprintf(stderr, "ERROR: Subset image large than in i direction than actual image.\n");
+			exit(-1);
+		}
+		if (sycout_green_suboffsetj+sycout_green_subpixels > sycout_green_pixels) {
+			fprintf(stderr, "ERROR: Subset image large than in j direction than actual image.\n");
+			exit(-1);
+		}
 	} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {
 	} else if (sycout_green_tp == SYCOUT_GREEN_TOTAL) {}
-
 
 	/* Was the output format set? */
 	if (outformat_set) {
@@ -116,9 +139,9 @@ void sycout_green_init_run(void) {
 			size_t size;
 			/* Green's function type */
 			if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {
-				size = sycout_green_pixels2*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad;
+				size = sycout_green_subpixels*sycout_green_subpixels*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad;
 
-				sycout_green_cvel2 = sycout_green_pixels*sycout_green_pixels;
+				sycout_green_cvel2 = sycout_green_subpixels*sycout_green_subpixels;
 				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
 				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {
@@ -134,9 +157,9 @@ void sycout_green_init_run(void) {
 				sycout_green_cvel1 = sycout_green_nvel2;
 				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			} else {/* Both */
-				size = sycout_green_pixels2*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad*sycout_green_nwav;
+				size = sycout_green_subpixels*sycout_green_subpixels*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad*sycout_green_nwav;
 
-				sycout_green_cvel2 = sycout_green_pixels*sycout_green_pixels*sycout_green_nwav;
+				sycout_green_cvel2 = sycout_green_subpixels*sycout_green_subpixels*sycout_green_nwav;
 				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
 				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
 			}
@@ -173,8 +196,8 @@ void sycout_green_init_particle(particle *p) {
 
 void sycout_green_deinit_run(void) {}
 void sycout_green_step(struct sycout_data *data) {
-	int i = (int)(data->i*sycout_green_pixels),
-		j = (int)(data->j*sycout_green_pixels),
+	int i = (int)(data->i*sycout_green_subpixels),
+		j = (int)(data->j*sycout_green_subpixels),
 		index;
 	
 	if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {	/* IMAGE */
@@ -188,7 +211,7 @@ void sycout_green_step(struct sycout_data *data) {
 		index = sycout_green_irad * sycout_green_crad +
 				sycout_green_ivel1 * sycout_green_cvel1 +
 				sycout_green_ivel2 * sycout_green_cvel2 +
-				i * sycout_green_pixels + j;
+				i * sycout_green_subpixels + j;
 
 		sycout_green_func[index] += data->brightness * data->RdPhi * data->Jdtdrho / particles_get_drho();
 	} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {	/* SPECTRUM */
@@ -220,11 +243,11 @@ void sycout_green_step(struct sycout_data *data) {
 		index = sycout_green_irad * sycout_green_crad +
 				sycout_green_ivel1 * sycout_green_cvel1 +
 				sycout_green_ivel2 * sycout_green_cvel2 +
-				i * sycout_green_pixels + j;
+				i * sycout_green_subpixels + j;
 
 		double *spectrum = sycamera_spectrum_get();
 		double diffel = data->RdPhi * data->Jdtdrho / particles_get_drho();
-		int si, gi, pixels2 = sycout_green_pixels*sycout_green_pixels;
+		int si, gi, pixels2 = sycout_green_subpixels*sycout_green_subpixels;
 		for (si = gi = 0; si < sycout_green_nwav; si++, gi += pixels2) {
 			sycout_green_func[index+gi] += spectrum[si] * diffel;
 		}
@@ -295,7 +318,7 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 			pixels = 1;
 			sf->write_list(sf, "pixels", &pixels, 1);
 		} else {
-			pixels = sycout_green_pixels;
+			pixels = sycout_green_subpixels;
 			sf->write_list(sf, "pixels", &pixels, 1);
 		}
 
