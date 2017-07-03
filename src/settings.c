@@ -11,10 +11,11 @@
 #include "util.h"
 
 char DEBUG_OUTPUT=0;
-FILE *settings_file;
+char *settings_file;
 char settings_eof=0;
 settings_token *tkn;
 int settings_line=1, settings_charpos=0;
+int settings_foff=0;
 char settings_token_names[10][10]={
 	"invalid",
 	"name",
@@ -36,31 +37,31 @@ char settings_getc(void) {
 	if (settings_eof) return 0;
 
 	do {
-		c = (char)fgetc(settings_file);
+		c = (char)settings_file[settings_foff++];
 		settings_charpos++;
 		if (c == '\n') {
 			settings_line++;
 			settings_charpos=0;
 		}
 
-		if (c==EOF) {settings_eof=1; return 0;}
+		if (c==0) {settings_eof=1; return 0;}
 		else if (c=='#') {
 			do {q = settings_getc();} while (q!=0 && q != '\n');
 			return q;
 		//} else if (c!=' '&&c!='\t') return c;
 		} else return c;
-	} while (c != EOF);
+	} while (c != 0);
 
 	settings_eof = 1;
 	return 0;
 }
 void settings_rewind(void) {
-	fseek(settings_file, -1, SEEK_CUR);
+	settings_foff--;
 	settings_charpos--;
 }
 enum settings_token_type token(void) {
 	char buffer[1024], c;
-	int length=0, val=0;
+	int length=0, val=0;	/* length = Length of buffer, val = Currently reading value */
 
 	do {
 		c = settings_getc();
@@ -435,15 +436,42 @@ settings *settings_interpret() {
 	return set;
 }
 
-void settings_init(char *filename) {
-	/* Open settings file */
-	settings_file = fopen(filename, "r");
+void settings_init(const char *filename) {
+	FILE *f;
+	const int BUFFER_SIZE=256;
+	int i, n;
 
-	if (!settings_file) {
-		fprintf(stderr, "ERROR: Unable to open file '%s'!\n", filename);
-		perror("ERROR");
-		exit(-1);
+	/* Open settings file */
+	if (filename != NULL) {
+		f = fopen(filename, "r");
+
+		if (!f) {
+			fprintf(stderr, "ERROR: Unable to open file '%s'!\n", filename);
+			perror("ERROR");
+			exit(-1);
+		}
+
+		/* Load file */
+		fseek(f, 0, SEEK_END);
+		size_t fsize = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		settings_file = malloc(fsize+1);
+		fread(settings_file, sizeof(char), fsize, f);
+		fclose(f);
+		settings_file[fsize] = 0;
+	} else {
+		i = 0;
+		settings_file = malloc(BUFFER_SIZE);
+		while ((n=fread(settings_file+i, sizeof(char), BUFFER_SIZE, stdin)) == BUFFER_SIZE) {
+			i += BUFFER_SIZE;
+			settings_file = realloc(settings_file, i+BUFFER_SIZE);
+		}
+
+		i += n;
+		settings_file[i] = 0;
 	}
+
+	settings_foff = 0;
 
 	/* Allocate token and particle */
 	tkn = malloc(sizeof(settings_token));
@@ -460,15 +488,17 @@ void settings_init(char *filename) {
 	default_particle->r0 = NULL;
 }
 
-settings *load_settings(char *filename) {
+/**
+ * Loads settings (pi-file) from the file
+ * with name 'filename'. If 'filename' is NULL,
+ * loads settings from stdin.
+ */
+settings *load_settings(const char *filename) {
 	/* Initialize settings interpreter */
 	settings_init(filename);
 
 	/* Create settings object */
 	settings *set = settings_interpret();
-
-	/* Clean up */
-	fclose(settings_file);
 
 	/* Verify all required settings are set */
 	char *e=NULL;

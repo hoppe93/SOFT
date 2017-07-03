@@ -126,8 +126,8 @@ magfield_t *magfield_load(const char *filename, enum sfile_type ftype) {
 	if (data->name == NULL) {fprintf(stderr, "The magnetic equilibrium data has no name!\n"); exit(-1);}
 	if (data->desc == NULL) {fprintf(stderr, "The magnetic equilibrium data has no description!\n"); exit(-1);}
 
-	temp = (*(s->get_doubles))(s, "axis", dims);
-	if (temp == NULL) {fprintf(stderr, "The magnetic equilibrium data contains no information about the magnetic axis!\n"); exit(-1);}
+	temp = (*(s->get_doubles))(s, "maxis", dims);
+	if (temp == NULL) {fprintf(stderr, "The magnetic equilibrium data contains no information about the magnetic axis (maxis)!\n"); exit(-1);}
 	data->axis_r = temp[0][0];
 	data->axis_z = temp[0][1];
 	free(temp);

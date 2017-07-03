@@ -379,13 +379,16 @@ int main(int argc, char *argv[]) {
 
 	return_value = 0;		/* Set default return value (SUCCESS) */
 
-	if (argc != 2) {
+	if (argc == 1) {
+		/* Load settings from stdin */
+		set = load_settings(NULL);
+	} else if (argc == 2) {
+		/* Load settings file */
+		set = load_settings(argv[1]);
+	} else {
 		fprintf(stderr, "Expected only name of pi file as argument!\n");
 		exit(-1);
 	}
-
-	/* Load settings file */
-	set = load_settings(argv[1]);
 
 	/* Load domain */
 	//dom = domain_load(set->domain);

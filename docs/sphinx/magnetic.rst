@@ -71,9 +71,6 @@ magnetic equilibrium files:
 +----------------+------------------+---------------------------------------------------------------+
 | Variable       | Type             | Description                                                   |
 +================+==================+===============================================================+
-| ``axis``       | 1-by-2 vector    | Specifies the location of the magnetic axis in the            |
-|                |                  | :math:`(R, z)`-plane.                                         |
-+----------------+------------------+---------------------------------------------------------------+
 | ``Br``         | m-by-n matrix    | Radial component of magnetic field.                           |
 +----------------+------------------+---------------------------------------------------------------+
 | ``Bphi``       | m-by-n matrix    | Toroidal component of magnetic field.                         |
@@ -82,6 +79,9 @@ magnetic equilibrium files:
 +----------------+------------------+---------------------------------------------------------------+
 | ``desc``       | String           | A longer description of the equilibrium. Must be present, but |
 |                |                  | may be empty.                                                 |
++----------------+------------------+---------------------------------------------------------------+
+| ``maxis``      | 1-by-2 vector    | Specifies the location of the magnetic axis in the            |
+|                |                  | :math:`(R, z)`-plane.                                         |
 +----------------+------------------+---------------------------------------------------------------+
 | ``name``       | String           | Name of the equilibrium. Must be present, but may be empty.   |
 +----------------+------------------+---------------------------------------------------------------+

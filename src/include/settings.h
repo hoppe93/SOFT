@@ -63,6 +63,6 @@ typedef struct {
 
 extern char DEBUG_OUTPUT;
 
-settings *load_settings(char*);
+settings *load_settings(const char*);
 
 #endif/*_SETTINGS_H*/
