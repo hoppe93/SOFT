@@ -14,7 +14,7 @@
 #	include "smpi.h"
 #endif
 
-int sycout_green_nvel1, sycout_green_nvel2,
+long long int sycout_green_nvel1, sycout_green_nvel2,
 	sycout_green_nrad, sycout_green_nwav,
 	sycout_green_pixels,
 	sycout_green_ivel1, sycout_green_ivel2,
@@ -196,11 +196,22 @@ void sycout_green_init_particle(particle *p) {
 
 void sycout_green_deinit_run(void) {}
 void sycout_green_step(struct sycout_data *data) {
-	int i = (int)(data->i*sycout_green_subpixels),
-		j = (int)(data->j*sycout_green_subpixels),
+	//long long int i = (long long int)(data->i*sycout_green_subpixels),
+	//	j = (long long int)(data->j*sycout_green_subpixels),
+	long long int i = (long long int)(data->i*sycout_green_pixels),
+		j = (long long int)(data->j*sycout_green_pixels),
 		index;
 	
 	if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {	/* IMAGE */
+		/* Ignore pixels outside of subimage */
+		if (i < sycout_green_suboffseti || i >= sycout_green_subpixels+sycout_green_suboffseti)
+			return;
+		if (j < sycout_green_suboffsetj || j >= sycout_green_subpixels+sycout_green_suboffsetj)
+			return;
+
+		i -= sycout_green_suboffseti;
+		j -= sycout_green_suboffsetj;
+			
 		/*
 		index = i * sycout_green_cpixels2 +
 				j * sycout_green_cpixels  +
@@ -227,11 +238,20 @@ void sycout_green_step(struct sycout_data *data) {
 
 		double *spectrum = sycamera_spectrum_get();
 		double diffel = data->RdPhi * data->Jdtdrho;
-		int  i;
+		long long int  i;
 		for (i = 0; i < sycout_green_nwav; i++) {
 			sycout_green_func[index+i] += spectrum[i] * diffel;
 		}
 	} else if (sycout_green_tp == SYCOUT_GREEN_FULL) {	/* FULL */
+		/* Ignore pixels outside of subimage */
+		if (i < sycout_green_suboffseti || i >= sycout_green_subpixels+sycout_green_suboffseti)
+			return;
+		if (j < sycout_green_suboffsetj || j >= sycout_green_subpixels+sycout_green_suboffsetj)
+			return;
+
+		i -= sycout_green_suboffseti;
+		j -= sycout_green_suboffsetj;
+			
 		/*
 		index = i * sycout_green_cpixels2 +
 				j * sycout_green_cpixels  +
@@ -247,7 +267,7 @@ void sycout_green_step(struct sycout_data *data) {
 
 		double *spectrum = sycamera_spectrum_get();
 		double diffel = data->RdPhi * data->Jdtdrho / particles_get_drho();
-		int si, gi, pixels2 = sycout_green_subpixels*sycout_green_subpixels;
+		long long int si, gi, pixels2 = sycout_green_subpixels*sycout_green_subpixels;
 		for (si = gi = 0; si < sycout_green_nwav; si++, gi += pixels2) {
 			sycout_green_func[index+gi] += spectrum[si] * diffel;
 		}
