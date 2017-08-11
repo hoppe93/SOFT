@@ -1,6 +1,8 @@
 #ifndef _SOFT_FILETYPE
 #define _SOFT_FILETYPE
 
+#include <stdlib.h>
+
 enum sfile_type {
 	FILETYPE_UNKNOWN,
 	FILETYPE_HDF5,
@@ -24,12 +26,12 @@ typedef struct s_sfile {
 	double **(*get_doubles)(struct s_sfile*, const char*, sfilesize_t*);
 	char *(*get_string)(struct s_sfile*, const char*);
 	int (*open)(struct s_sfile*, const char*, enum sfile_mode);
-	void (*write_array)(struct s_sfile*, const char*, double**, int, int);
+	void (*write_array)(struct s_sfile*, const char*, double**, size_t, size_t);
 	void (*write_attribute_scalar)(struct s_sfile*, const char*, const char*, double);
-	void (*write_attribute_string)(struct s_sfile*, const char*, const char*, const char*, int);
-	void (*write_image)(struct s_sfile*, const char*, double**, int);
-	void (*write_list)(struct s_sfile*, const char*, double*, int);
-	void (*write_string)(struct s_sfile*, const char*, const char*, int);
+	void (*write_attribute_string)(struct s_sfile*, const char*, const char*, const char*, size_t);
+	void (*write_image)(struct s_sfile*, const char*, double**, size_t);
+	void (*write_list)(struct s_sfile*, const char*, double*, size_t);
+	void (*write_string)(struct s_sfile*, const char*, const char*, size_t);
 } sFILE;
 
 /*

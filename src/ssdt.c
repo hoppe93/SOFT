@@ -58,7 +58,7 @@ int ssdt_open(sFILE *s, const char *filename, enum sfile_mode mode) {
  * Close currently opened SDT file.
  */
 void ssdt_close(sFILE *s) {
-	int i;
+	size_t i;
 	if (s->mode == SFILE_MODE_READ) {
 		struct ssdt_keylist *kl = (struct ssdt_keylist*)s->identifier;
 		if (kl == NULL) return;
@@ -107,37 +107,37 @@ struct ssdt_keylist *_ssdt_load(FILE *f) {
 	kl->keys = NULL;
 	kl->nkeys = 0;
 
-	int i = 0, j, m, n;
+	size_t i = 0, j, m, n;
 	while (ssdt_file[i]) {
 		kl->keys = realloc(kl->keys, sizeof(ssdt_key)*(kl->nkeys+1));
 
 		/* Load m & n */
-		sscanf(ssdt_file+i, "%d %d", &m, &n);
+		sscanf(ssdt_file+i, "%zu %zu", &m, &n);
 		/* Skip m & n in the string */
 		while (ssdt_file[i]&& ssdt_file[i]!=' '&&ssdt_file[i]!='\t') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[1]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[1]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		while (ssdt_file[i]&&(ssdt_file[i]==' '||ssdt_file[i]=='\t')) i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[2]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[2]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		while (ssdt_file[i]&& ssdt_file[i]!=' '&&ssdt_file[i]!='\t') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[3]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[3]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		while (ssdt_file[i]&&(ssdt_file[i]==' '||ssdt_file[i]=='\t')) i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[4]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[4]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		kl->keys[kl->nkeys].m = m;
 		kl->keys[kl->nkeys].n = n;
 
 		/* Load name */
 		j = i;
 		while (ssdt_file[i] && ssdt_file[i]!='\n') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[5]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[5]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		kl->keys[kl->nkeys].name = malloc(sizeof(char)*(i-j+1));
 		strncpy(kl->keys[kl->nkeys].name, ssdt_file+j, i-j);
 		kl->keys[kl->nkeys].name[i-j] = 0;
 
 		/* Find location of data */
 		while (ssdt_file[i] && ssdt_file[i]!='\n') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[6]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[6]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		while (ssdt_file[i] && (ssdt_file[i]=='\n' || ssdt_file[i]==' ' || ssdt_file[i]=='\t')) i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[7]: Unexpected end-of-file at byte %d.\n", i); return NULL;}
+		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[7]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		kl->keys[kl->nkeys].location = ssdt_file+i;
 
 		kl->nkeys++;
@@ -157,7 +157,7 @@ struct ssdt_keylist *_ssdt_load(FILE *f) {
  * the object data and returns object dimensions.
  */
 ssdt_key *ssdt_locate(sFILE *s, const char *name) {
-	int i;
+	size_t i;
 	struct ssdt_keylist *kl = (struct ssdt_keylist*)s->identifier;
 
 	for (i = 0; i < kl->nkeys; i++) {
@@ -175,7 +175,7 @@ ssdt_key *ssdt_locate(sFILE *s, const char *name) {
  */
 char *ssdt_get_string(sFILE *s, const char *name) {
 	char *str;
-	int i;
+	size_t i;
 	ssdt_key *key;
 
 	key = ssdt_locate(s, name);
@@ -209,7 +209,7 @@ double **ssdt_get_doubles(sFILE *s, const char *name, sfilesize_t *dims) {
 	double **values;
 	double *v;
 	ssdt_key *key;
-	int i,j, vindex, tot;
+	size_t i,j, vindex, tot;
 
 	key = ssdt_locate(s, name);
 	if (key == NULL) return NULL;
@@ -243,17 +243,17 @@ double **ssdt_get_doubles(sFILE *s, const char *name, sfilesize_t *dims) {
 /******************************
  *********** OUTPUT ***********
  ******************************/
-void ssdt_write_array(sFILE *s, const char *name, double **arr, int m, int n) {
+void ssdt_write_array(sFILE *s, const char *name, double **arr, size_t m, size_t n) {
 	char *str;
-	const int ssize = 2048;
-	int i, j, k, l;
+	const size_t ssize = 2048;
+	size_t i, j, k, l;
 
 	if (s == NULL || s->mode == SFILE_MODE_READ) {
 		fprintf(stderr, "ERROR: No SDT file is open, so unable to write array.\n");
 		return;
 	}
 
-	fprintf((FILE*)s->identifier, "%d %d %s\n", m, n, name);
+	fprintf((FILE*)s->identifier, "%zu %zu %s\n", m, n, name);
 
 	str = malloc(sizeof(char)*(ssize+1));
 	l = 0;
@@ -276,22 +276,22 @@ void ssdt_write_array(sFILE *s, const char *name, double **arr, int m, int n) {
 	}
 	if (l > 0) fprintf((FILE*)s->identifier, "%s\n", str);
 }
-void ssdt_write_image(sFILE *s, const char *name, double **img, int pixels) {
+void ssdt_write_image(sFILE *s, const char *name, double **img, size_t pixels) {
 	ssdt_write_array(s, name, img, pixels, pixels);
 }
-void ssdt_write_list(sFILE *s, const char *name, double *list, int n) {
+void ssdt_write_list(sFILE *s, const char *name, double *list, size_t n) {
 	ssdt_write_array(s, name, &list, 1, n);
 }
-void ssdt_write_string(sFILE *s, const char *name, const char *str, int len) {
+void ssdt_write_string(sFILE *s, const char *name, const char *str, size_t len) {
 	if (s->identifier == NULL || s->mode == SFILE_MODE_READ) {
 		fprintf(stderr, "ERROR: No SDT file is open, so unable to write array.\n");
 		return;
 	}
 
-	int i;
+	size_t i;
 	for (i = 0; i < len; i++) {
 		if (str[i] == 0 || str[i] == '\n') {
-			fprintf(stderr, "ERROR: Invalid character in string about to be written to SDT file: 0x%X\n", (unsigned int)str[i]);
+			fprintf(stderr, "ERROR: Invalid character in string about to be written to SDT file: 0x%zX\n", (size_t)str[i]);
 			return;
 		}
 	}
@@ -300,10 +300,10 @@ void ssdt_write_string(sFILE *s, const char *name, const char *str, int len) {
 		return;
 	}
 
-	fprintf((FILE*)s->identifier, "1 %d %s\n%s\n\n", len, name, str);
+	fprintf((FILE*)s->identifier, "1 %zu %s\n%s\n\n", len, name, str);
 }
 char *_ssdt_get_attribute_name(const char *dsetname, const char *name) {
-	int l1 = strlen(dsetname), l2 = strlen(name);
+	size_t l1 = strlen(dsetname), l2 = strlen(name);
 	char *nname = malloc(sizeof(char)*(l1+l2+2));
 
 	strcpy(nname, dsetname);
@@ -317,7 +317,7 @@ void ssdt_write_attribute_scalar(sFILE *s, const char *dset, const char *name, d
 	fprintf((FILE*)s->identifier, "1 1 %s\n%.8e\n\n", fullname, val);
 	free(fullname);
 }
-void ssdt_write_attribute_string(sFILE *s, const char *dset, const char *name, const char *str, int len) {
+void ssdt_write_attribute_string(sFILE *s, const char *dset, const char *name, const char *str, size_t len) {
 	char *fullname = _ssdt_get_attribute_name(dset, name);
 	ssdt_write_string(s, fullname, str, len);
 	free(fullname);

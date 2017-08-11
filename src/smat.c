@@ -76,7 +76,7 @@ char *smat_get_string(sFILE *s, const char *name) {
 	if (mxGetClassID(arr) != mxCHAR_CLASS)
 		return NULL;
 	
-	int length = mxGetN(arr)+1;
+	size_t length = mxGetN(arr)+1;
 	char *str = malloc(length);
 	mxGetString(arr, str, length);
 	
@@ -101,7 +101,7 @@ char *smat_get_string(sFILE *s, const char *name) {
  * is returned.
  */
 double **smat_get_doubles(sFILE *s, const char *name, sfilesize_t *dims) {
-	int i, j, rows, cols;
+	size_t i, j, rows, cols;
 	MATFile *mfp = (MATFile*)s->identifier;
 	mxArray *arr = matGetVariable(mfp, name);
 
@@ -138,7 +138,7 @@ double **smat_get_doubles(sFILE *s, const char *name, sfilesize_t *dims) {
 /******************************
  *********** OUTPUT ***********
  ******************************/
-void smat_write_string(sFILE *s, const char *name, const char *str, int length) {
+void smat_write_string(sFILE *s, const char *name, const char *str, size_t length) {
 	int status;
 	mxArray *ms;
 	MATFile *mfp = (MATFile*)s->identifier;
@@ -154,8 +154,8 @@ void smat_write_string(sFILE *s, const char *name, const char *str, int length) 
 	if (status != 0)
 		fprintf(stderr, "ERROR: Unable to write string '%s' to MATLAB file.\n", name);
 }
-void smat_write_array(sFILE *s, const char *name, double **arr, int rows, int cols) {
-	int status, i, j;
+void smat_write_array(sFILE *s, const char *name, double **arr, size_t rows, size_t cols) {
+	size_t status, i, j;
 	double *t;
 	mxArray *ma;
 	MATFile *mfp = (MATFile*)s->identifier;
@@ -179,15 +179,15 @@ void smat_write_array(sFILE *s, const char *name, double **arr, int rows, int co
 		fprintf(stderr, "ERROR: Unable to write variable '%s' to MATLAB file.\n", name);
 	}
 }
-void smat_write_image(sFILE *s, const char *name, double **image, int n) {
+void smat_write_image(sFILE *s, const char *name, double **image, size_t n) {
 	smat_write_array(s, name, image, n, n);
 }
-void smat_write_list(sFILE *s, const char *name, double *list, int n) {
+void smat_write_list(sFILE *s, const char *name, double *list, size_t n) {
 	smat_write_array(s, name, &list, 1, n);
 }
 
 char *_smat_get_attribute_name(const char *dsetname, const char *name) {
-	int l1 = strlen(dsetname), l2 = strlen(name);
+	size_t l1 = strlen(dsetname), l2 = strlen(name);
 	char *nname = malloc(sizeof(char)*(l1+l2+2));
 
 	strcpy(nname, dsetname);
@@ -221,7 +221,7 @@ void smat_write_attribute_scalar(sFILE *s, const char *dsetname, const char *nam
  * str: Value of attribute
  * len: Length of attribute string
  */
-void smat_write_attribute_string(sFILE *s, const char *dsetname, const char *name, const char *str, int len) {
+void smat_write_attribute_string(sFILE *s, const char *dsetname, const char *name, const char *str, size_t len) {
 	char *nname = _smat_get_attribute_name(dsetname, name);
 	smat_write_string(s, nname, str, len);
 	free(nname);

@@ -99,7 +99,7 @@ double **shdf5_get_doubles(sFILE *s, const char *name, sfilesize_t *dims) {
 	double *data, **pointers;
 	hid_t dset, space;
 	sfilesize_t ndims;
-	unsigned int i;
+	size_t i;
 	hid_t fileid = *((hid_t*)(s->identifier));
 
 	if (H5Lexists(fileid, name, H5P_DEFAULT) <= 0)
@@ -146,7 +146,7 @@ double **shdf5_get_doubles(sFILE *s, const char *name, sfilesize_t *dims) {
  * length: Length of string to write, or <= 0
  *   to automatically determine the length.
  */
-void shdf5_write_string(sFILE *s, const char *name, const char *str, int length) {
+void shdf5_write_string(sFILE *s, const char *name, const char *str, size_t length) {
 	hid_t dsetid, filetype, memtype, spaceid;
 
 	hsize_t dim[1] = {1};
@@ -178,7 +178,7 @@ void shdf5_write_string(sFILE *s, const char *name, const char *str, int length)
  * rows: Number of rows of array
  * cols: Number of columns of data
  */
-void shdf5_write_array(sFILE *s, const char *name, double **arr, int rows, int cols) {
+void shdf5_write_array(sFILE *s, const char *name, double **arr, size_t rows, size_t cols) {
 	hid_t spaceid, dsetid;
 
 	hsize_t dims[2] = {rows, cols};
@@ -200,7 +200,7 @@ void shdf5_write_array(sFILE *s, const char *name, double **arr, int rows, int c
  * image: Image data to write
  * n: Number of pixels to write (image is assumed square)
  */
-void shdf5_write_image(sFILE *s, const char *name, double **image, int n) {
+void shdf5_write_image(sFILE *s, const char *name, double **image, size_t n) {
 	shdf5_write_array(s, name, image, n, n);
 }
 /**
@@ -213,7 +213,7 @@ void shdf5_write_image(sFILE *s, const char *name, double **image, int n) {
  * list: Data to write
  * n: Number of elements in list
  */
-void shdf5_write_list(sFILE *s, const char *name, double *list, int n) {
+void shdf5_write_list(sFILE *s, const char *name, double *list, size_t n) {
 	shdf5_write_array(s, name, &list, 1, n);
 }
 
@@ -249,7 +249,7 @@ void shdf5_write_attribute_scalar(sFILE *s, const char *dsetname, const char *na
  * length: Length of string to write, or <= 0
  *   to automatically determine length
  */
-void shdf5_write_attribute_string(sFILE *s, const char *dsetname, const char *name, const char *str, int length) {
+void shdf5_write_attribute_string(sFILE *s, const char *dsetname, const char *name, const char *str, size_t length) {
 	hid_t dsetid, filetype, memtype, spaceid, attid;
 
 	hsize_t dim[1] = {1};
