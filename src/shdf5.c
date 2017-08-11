@@ -18,7 +18,7 @@ hid_t fileid;
  *
  * filename: Name of file to open
  */
-void shdf5_open(sFILE *s, const char *filename, enum sfile_mode mode) {
+int shdf5_open(sFILE *s, const char *filename, enum sfile_mode mode) {
 	s->identifier = malloc(sizeof(hid_t));
 	s->mode = mode;
 
@@ -36,13 +36,15 @@ void shdf5_open(sFILE *s, const char *filename, enum sfile_mode mode) {
 			fprintf(stderr, "Unrecognized option for opening HDF5 file: %d.\n", mode);
 			free(s->identifier);
 			s->identifier = NULL;
-			break;
+			return 0;
 	}
 
 	if (*((hid_t*)(s->identifier)) < 0) {
 		fprintf(stderr, "Unable to open HDF5 file: %s\n", filename);
-		exit(-1);
+		return 0;
 	}
+
+	return 1;
 }
 
 /**

@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "settings.h"
+#include "sfile.h"
 #include "tools.h"
 
 #define SPACE3D_CHUNKSIZE 10000
@@ -83,8 +84,8 @@ void sycout_image_init(struct general_settings*);
 void sycout_image_init_run(void);
 void sycout_image_init_particle(particle*);
 void sycout_image_step(struct sycout_data*);
-void sycout_image_combine(FILE*, camera_image*);
-void sycout_image_output(FILE*, camera_image*);
+void sycout_image_combine(sFILE*, camera_image*);
+void sycout_image_output(sFILE*, camera_image*);
 void sycout_image_write(int, int);
 
 /****************************

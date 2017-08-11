@@ -23,7 +23,7 @@ typedef struct s_sfile {
 	void (*close)(struct s_sfile*);
 	double **(*get_doubles)(struct s_sfile*, const char*, sfilesize_t*);
 	char *(*get_string)(struct s_sfile*, const char*);
-	void (*open)(struct s_sfile*, const char*, enum sfile_mode);
+	int (*open)(struct s_sfile*, const char*, enum sfile_mode);
 	void (*write_array)(struct s_sfile*, const char*, double**, int, int);
 	void (*write_attribute_scalar)(struct s_sfile*, const char*, const char*, double);
 	void (*write_attribute_string)(struct s_sfile*, const char*, const char*, const char*, int);
@@ -36,7 +36,7 @@ typedef struct s_sfile {
 void sfile_close(void);
 double** sfile_get_doubles(const char*, sfilesize_t*);
 char* sfile_get_string(const char*);
-void sfile_open(const char*, enum sfile_mode);
+int sfile_open(const char*, enum sfile_mode);
 void sfile_write_array(const char*, double**, int, int);
 void sfile_write_attribute_scalar(const char*, const char*, double);
 void sfile_write_attribute_string(const char*, const char*, const char*, int);

@@ -6,7 +6,7 @@
 void smat_close(sFILE*);
 char *smat_get_string(sFILE*, const char*);
 double **smat_get_doubles(sFILE*, const char*, sfilesize_t*);
-void smat_open(sFILE*, const char*, enum sfile_mode);
+int smat_open(sFILE*, const char*, enum sfile_mode);
 void smat_write_array(sFILE*, const char*, double**, int, int);
 void smat_write_attribute_scalar(sFILE*, const char*, const char*, double);
 void smat_write_attribute_string(sFILE*, const char*, const char*, const char*, int);

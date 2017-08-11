@@ -27,7 +27,7 @@ void smat_close(sFILE *s) {
  * filename: Name of file to open
  * ot: Purpose for opening file (read or write)
  */
-void smat_open(sFILE *s, const char *filename, enum sfile_mode mode) {
+int smat_open(sFILE *s, const char *filename, enum sfile_mode mode) {
 	s->mode = mode;
 	s->identifier = NULL;
 
@@ -43,13 +43,15 @@ void smat_open(sFILE *s, const char *filename, enum sfile_mode mode) {
 			break;
 		default:
 			fprintf(stderr, "Unrecognized option for opening MATLAB file: %d.\n", mode);
-			break;
+			return 0;
 	}
 
 	if (s->identifier == NULL) {
 		fprintf(stderr, "Unable to create or open '%s'.\n", filename);
-		exit(-1);
+		return 0;
 	}
+
+	return 1;
 }
 
 /******************************

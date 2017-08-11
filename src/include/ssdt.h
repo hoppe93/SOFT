@@ -14,7 +14,7 @@ struct ssdt_keylist {
 	ssdt_key *keys;
 };
 
-void ssdt_open(sFILE *, const char*, enum sfile_mode);
+int ssdt_open(sFILE *, const char*, enum sfile_mode);
 void ssdt_close(sFILE*);
 struct ssdt_keylist *_ssdt_load(FILE*);
 ssdt_key *ssdt_locate(sFILE*, const char*);

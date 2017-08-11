@@ -5,7 +5,7 @@
 #include "sfile.h"
 
 void shdf5_close(sFILE*);
-void shdf5_open(sFILE*, const char*, enum sfile_mode);
+int shdf5_open(sFILE*, const char*, enum sfile_mode);
 char *shdf5_get_string(sFILE*, const char*);
 double **shdf5_get_doubles(sFILE*, const char*, sfilesize_t*);
 void shdf5_write_string(sFILE*, const char*, const char*, int);
