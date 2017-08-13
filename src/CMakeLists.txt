@@ -13,18 +13,19 @@ set(CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/Modules/" CACHE PATH "CMake module pa
 include_directories("${PROJECT_SOURCE_DIR}/src/include")
 
 # Set libraries to use
+option(BUILD_TESTS "Build the test programs" OFF)
 option(DEBUG "Compile with debug symbols and no optimzations" OFF)
 option(USE_HDF5 "Link in support for HDF5" ON)
 option(USE_MATLAB "Link in support for MATLAB *.mat files" ON)
 option(USE_MPI "Compile with MPI support" OFF)
 
-#subdirs(equations magnetic tools tools/sycamera)
-#file(GLOB all "*.c")
+set(mainprogram
+	"${PROJECT_SOURCE_DIR}/src/main.c"
+)
 set(main
 	"${PROJECT_SOURCE_DIR}/src/ctsv.c"
 	"${PROJECT_SOURCE_DIR}/src/diag.c"
 	"${PROJECT_SOURCE_DIR}/src/domain.c"
-	"${PROJECT_SOURCE_DIR}/src/main.c"
 	"${PROJECT_SOURCE_DIR}/src/particles.c"
 	"${PROJECT_SOURCE_DIR}/src/quantities.c"
 	"${PROJECT_SOURCE_DIR}/src/readfile.c"
@@ -80,6 +81,10 @@ set(sycamera
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/topview.c"
 )
 
+set(tests
+	"${PROJECT_SOURCE_DIR}/tests/main.c"
+	"${PROJECT_SOURCE_DIR}/tests/hyperbola.c"
+)
 set(tools
 	"${PROJECT_SOURCE_DIR}/src/tools/orbit.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/tools.c"
@@ -102,10 +107,15 @@ if (USE_MPI)
 	set(main ${main} "smpi.c")
 endif (USE_MPI)
 
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm")
-add_executable(soft ${main} ${equations} ${magnetic} ${tools} ${sycamera})
+add_executable(soft ${mainprogram} ${main} ${equations} ${magnetic} ${tools} ${sycamera})
 target_link_libraries(soft m)
 install(TARGETS soft DESTINATION /usr/bin)
+
+# Test programs
+if (BUILD_TESTS)
+	add_executable(runtest ${tests} ${main} ${equations} ${magnetic} ${tools} ${sycamera})
+	target_link_libraries(runtest m)
+endif (BUILD_TESTS)
 
 # Find GSL!
 find_package(GSL REQUIRED)
@@ -114,6 +124,11 @@ if (GSL_FOUND)
 		include_directories(${GSL_INCLUDE_DIRS})
 		target_link_libraries(soft ${GSL_LIBRARIES})
 		target_link_libraries(soft ${GSL_CBLAS_LIBRARY})
+
+		if (BUILD_TESTS)
+			target_link_libraries(runtest ${GSL_LIBRARIES})
+			target_link_libraries(runtest ${GSL_CBLAS_LIBRARY})
+		endif (BUILD_TESTS)
 	else ((GSL_VERSION VERSION_GREATER "2.0") OR (GSL_VERSION VERSION_EQUAL "2.0"))
 		message(FATAL_ERROR "SOFT needs GSL >= 2.0")
 	endif ((GSL_VERSION VERSION_GREATER "2.0") OR (GSL_VERSION VERSION_EQUAL "2.0"))
@@ -126,6 +141,10 @@ if (USE_HDF5)
 		include_directories(${HDF5_INCLUDE_DIRS})
 		message(STATUS "Path to HDF5: ${HDF5_INCLUDE_DIRS}")
 		target_link_libraries(soft ${HDF5_LIBRARIES})
+
+		if (BUILD_TESTS)
+			target_link_libraries(runtest ${HDF5_LIBRARIES})
+		endif (BUILD_TESTS)
 	else (HDF5_FOUND)
 		message(FATAL_ERROR "HDF5 support was requested, but no HDF5 library was found on this system")
 	endif (HDF5_FOUND)
@@ -139,6 +158,10 @@ if (USE_MATLAB)
 		message(${Matlab_MAT_LIBRARY})
 		message(${Matlab_MX_LIBRARY})
 		target_link_libraries(soft ${Matlab_MAT_LIBRARY} ${Matlab_MX_LIBRARY})
+
+		if (BUILD_TESTS)
+			target_link_libraries(runtest ${Matlab_MAT_LIBRARY} ${Matlab_MX_LIBRARY})
+		endif (BUILD_TESTS)
 	else (Matlab_FOUND)
 		message(FATAL_ERROR "MATLAB support was requested, but no MATLAB installation was found")
 	endif (Matlab_FOUND)
@@ -155,11 +178,16 @@ if (USE_MPI)
 	find_package(MPI)
 	if (MPI_C_FOUND)
 		include_directories(${MPI_C_INCLUDE_PATH})
+
 		set_target_properties(soft PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 		set_target_properties(soft PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 		target_link_libraries(soft "${MPI_C_LIBRARIES}")
-		#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-		#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_C_LINK_FLAGS}")
+
+		if (BUILD_TESTS)
+			set_target_properties(runtest PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+			set_target_properties(runtest PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+			target_link_libraries(runtest "${MPI_C_LIBRARIES}")
+		endif (BUILD_TESTS)
 	else (MPI_C_FOUND)
 		message(FATAL_ERROR "MPI support was requested, but no MPI library was found")
 	endif (MPI_C_FOUND)
