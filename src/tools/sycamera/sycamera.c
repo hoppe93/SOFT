@@ -478,7 +478,7 @@ void sycamera_output(equation *eq) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocesses);
 #endif
-
+	
 	sycout_output_all(mpi_rank, nprocesses);
 }
 
