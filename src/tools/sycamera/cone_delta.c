@@ -266,25 +266,29 @@ void cone_delta_hyperbola_intersections(
 	double arg1 = (sqr-d)*b;
 	double arg2 = (-sqr-d)*b;
 
-	if (arg1 <= 0.0) arg1 = -arg1;
-	*t1 = log(arg1);
+	//if (arg1 <= 0.0) arg1 = -arg1;
+	if (arg1 > 0) {
+		*t1 = log(arg1);
 
-	double cosht1 = cosh(*t1), sinht1 = sinh(*t1);
-	/* Make sure it also satisfies the second condition */
-	*y1 = origin - Ay*cosht1 + By*sinht1;
-	if (-half_side_length <= *y1 && *y1 <= half_side_length)
-		*ok1 = 1;
-	else *ok1 = 0;
+		double cosht1 = cosh(*t1), sinht1 = sinh(*t1);
+		/* Make sure it also satisfies the second condition */
+		*y1 = origin - Ay*cosht1 + By*sinht1;
+		if (-half_side_length <= *y1 && *y1 <= half_side_length)
+			*ok1 = 1;
+		else *ok1 = 0;
+	} else *ok1 = 0;
 
-	if (arg2 <= 0.0) arg2 = -arg2;
-	*t2 = log(arg2);
+	//if (arg2 <= 0.0) arg2 = -arg2;
+	if (arg2 > 0) {
+		*t2 = log(arg2);
 
-	double cosht2 = cosh(*t2), sinht2 = sinh(*t2);
-	/* Make sure they also satisfy the second condition */
-	*y2 = origin - Ay*cosht2 + By*sinht2;
-	if (-half_side_length <= *y2 && *y2 <= half_side_length)
-		*ok2 = 1;
-	else *ok2 = 0;
+		double cosht2 = cosh(*t2), sinht2 = sinh(*t2);
+		/* Make sure they also satisfy the second condition */
+		*y2 = origin - Ay*cosht2 + By*sinht2;
+		if (-half_side_length <= *y2 && *y2 <= half_side_length)
+			*ok2 = 1;
+		else *ok2 = 0;
+	} else *ok2 = 0;
 }
 
 /**
@@ -466,11 +470,8 @@ double cone_delta_radiation_hits(
 		sinxi = vdot3(vhat, e2)/sinphi;
 	}
 
-	/* Gyroradius of particle */
-	//double rg = mass*sd->vperp / (fabs(charge)*sd->B);
 	/* Calculate length of cone focus point vector, projected in the camera normal */
-	/* The length of the focus point vector has been adjusted for deviations due to the finite gyroradius */
-	double X = fabs(vdot3(rcp, ddet)/cosphi);// + rg/tanThetap;
+	double X = fabs(vdot3(rcp, ddet)/cosphi);
 	vector *Xv = empty1;
 	Xv->val[0] = X*vhat->val[0];
 	Xv->val[1] = X*vhat->val[1];

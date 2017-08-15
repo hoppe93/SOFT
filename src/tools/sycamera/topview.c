@@ -103,6 +103,7 @@ void sycout_topview_step(struct sycout_data *data) {
         sycout_topview_camim->canvas[j][i] = 1.;
 }
 
+/*
 void sycout_topview_combine(FILE *f, camera_image *ci) {
     int i, j;
     double tempval = 0.;
@@ -131,8 +132,39 @@ void sycout_topview_output(FILE *f, camera_image *ci) {
 		fprintf(f, "\n");
 	}
 }
+*/
+void sycout_topview_combine(sFILE *sf, camera_image *ci) {
+	int i, j;
+	sfilesize_t dims[2];
+	double **img = sf->get_doubles(sf, "image", dims);
+	
+    for (i = 0; i < ci->pixels; i++) {
+        for (j = 0; j < ci->pixels; j++) {
+			if (sycout_topview_brightness == SYCOUT_TOPVIEW_TYPE_INTENSITY ||
+				sycout_topview_brightness == SYCOUT_TOPVIEW_TYPE_HIST)
+				ci->canvas[i][j] += img[i][j];
+			else if (sycout_topview_brightness == SYCOUT_TOPVIEW_TYPE_BW &&
+				img[i][j] >= .5)
+				ci->canvas[i][j] = 1;
+		}
+	}
+}
+void sycout_topview_output(sFILE *sf, camera_image *ci) {
+	double *wall[2];
+	domain *d = domain_get();
+	wall[0] = d->r;
+	wall[1] = d->z;
+
+	sf->write_list(sf, "detectorPosition", Rdet->val, 3);
+	sf->write_list(sf, "detectorDirection", ddet->val, 3);
+	sf->write_list(sf, "detectorVisang", &visang, 1);
+	sf->write_image(sf, "image", ci->canvas, ci->pixels);
+	sf->write_array(sf, "wall", wall, 2, d->n);
+}
 void sycout_topview_write(int mpi_rank, int nprocesses) {
-	FILE *f;
+	//FILE *f;
+	sFILE *sf;
+	enum sfile_type ftype;
 
 #ifdef USE_MPI
 	printf("[%d] (sycout topview) Waiting for 'output ready' from previous process.\n", mpi_rank);
@@ -140,6 +172,37 @@ void sycout_topview_write(int mpi_rank, int nprocesses) {
 	printf("[%d] (sycout topview) Received 'output ready' signal from previous process.\n", mpi_rank);
 #endif
 
+	ftype = sfile_get_filetype(sycout_topview_filename);
+	if (ftype == FILETYPE_UNKNOWN) {
+		ftype = FILETYPE_SDT;
+		if (mpi_rank == 0)
+			printf("[%d] (sycout image) WARNING: Unable to determine filetype of output. Defaulting to SDT.\n", mpi_rank);
+	}
+
+	sf = sfile_init(ftype);
+
+	/* First, if this is not the root process
+	 * (which always writes first), read in
+	 * the image that has already been written
+	 * and add it to our image.
+	 */
+	if (mpi_rank > 0) {
+		if (sf->open(sf, sycout_topview_filename, SFILE_MODE_READ)) {
+			sycout_topview_combine(sf, sycout_topview_result);
+			sf->close(sf);
+		} else {
+    		fprintf(stderr, "[%d] WARNING: Unable to open file for reading: '%s'\n", mpi_rank, sycout_topview_filename);
+		}
+	}
+
+	if (!sf->open(sf, sycout_topview_filename, SFILE_MODE_WRITE)) {
+        fprintf(stderr, "[%d] ERROR: Unable to open file for writing: '%s'\n", mpi_rank, sycout_topview_filename);
+        exit(1);
+	}
+
+	sycout_topview_output(sf, sycout_topview_result);
+	sf->close(sf);
+/*
     if (mpi_rank > 0) {
     	f = fopen(sycout_topview_filename, "r");
     	if (f != NULL) {
@@ -160,6 +223,7 @@ void sycout_topview_write(int mpi_rank, int nprocesses) {
 
     sycout_topview_output(f, sycout_topview_result);
     fclose(f);
+*/
 
 #ifdef USE_MPI
     printf("[%d] (sycout topview) Done, sending 'output ready' to next process.\n", mpi_rank);
