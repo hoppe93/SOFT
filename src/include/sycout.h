@@ -140,6 +140,14 @@ typedef struct {
 	double *intensity;	/* Intensity in each point */
 } space3d_real_t;
 
+typedef struct {
+	size_t pixels;		/* Pixels per dimension */
+	double *image;		/* "Image" */
+	double xmin, xmax,	/* Bounds in all dimensions */
+		   ymin, ymax,
+		   zmin, zmax;
+} space3d_pixels_t;
+
 #define SOFT_SPACE3D_MAGIC 0x50F8
 typedef struct {
 	unsigned short magic;
