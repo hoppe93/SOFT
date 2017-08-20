@@ -73,6 +73,8 @@ particle *particles_generate(void);
 particle *particles_generate_at(double, double, double);
 double *particles_get_bounds(void);
 double particles_get_drho(void);
+double particles_get_dvel1(void);
+double particles_get_dvel2(void);
 double particles_find_axis_r(double, double);
 char *particles_param1_name(void);
 char *particles_param2_name(void);

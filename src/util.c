@@ -138,3 +138,9 @@ void print_timediff(int mpi_rank, int i, int pos) {
 	}
 }
 
+/* Convert a character to uppercase */
+char chrupr(char c) {
+	if (c < 'a' || c > 'z') return c;
+	else return c + ('A'-'a');
+}
+

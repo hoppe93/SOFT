@@ -51,11 +51,14 @@ void sycout_step(struct sycout_data*);
 /****************************
  *       GREEN SYCOUT       *
  ****************************/
-enum sycout_green_type {
-	SYCOUT_GREEN_IMAGE,
+enum sycout_green_dimension {
+	SYCOUT_GREEN_NONE,
+	SYCOUT_GREEN_RADIUS,
+	SYCOUT_GREEN_IMAGEI,
+	SYCOUT_GREEN_IMAGEJ,
 	SYCOUT_GREEN_SPECTRUM,
-	SYCOUT_GREEN_TOTAL,
-	SYCOUT_GREEN_FULL
+	SYCOUT_GREEN_VEL1,
+	SYCOUT_GREEN_VEL2
 };
 
 void sycout_green_init(struct general_settings*);

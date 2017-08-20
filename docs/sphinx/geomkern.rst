@@ -15,21 +15,28 @@ is that only a set of multiplications are required to produce the synchrotron
 radiation image seen by a camera. A similar formulation for the synchrotron
 spectrum exists.
 
-SOFT is able to generate four different types of geometric kernel functions
-:math:`\hat{I}`. The geometric kernel functions supported by SOFT are listed
-in the table below.
+The format of the Green's function is specified in the ``pi``-file using
+the ``dimensions`` option. The value of this option is a set of characters
+denoting each of the variables that should appear in the Green's function.
+For example, ``dimensions = r12ij`` would generate a Green's function containing
+information about radius, velocity coordinate 1, velocity coordinate 2 as well
+as both pixels of the image. The possible characters and their meaning are:
 
-+---------------+-----------------------------------------------------+--------------------------------------------------------------------------------------------+
-| Function      | Parameters                                          | Description                                                                                |
-+===============+=====================================================+============================================================================================+
-| ``full``      | :math:`(\rho, p_\parallel, p_\perp, \lambda, i, j)` | Contains all extractable information about the geometric kernel function.                  |
-+---------------+-----------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``image``     | :math:`(\rho, p_\parallel, p_\perp, i, j)`          | The geometric kernel function used to construct an image.                                  |
-+---------------+-----------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``spectrum``  | :math:`(\rho, p_\parallel, p_\perp, \lambda)`       | The geometric kernel function used to construct a spectrum.                                |
-+---------------+-----------------------------------------------------+--------------------------------------------------------------------------------------------+
-| ``total``     | :math:`(\rho, p_\parallel, p_\perp)`                | Describes which parts of a distribution function will contribute the most to the detector. |
-+---------------+-----------------------------------------------------+--------------------------------------------------------------------------------------------+
++------------+----------------------------------------------------------------------------------+
+| Function   | Description                                                                      |
++============+==================================================================================+
+| ``1``      | Velocity coordinate 1. Depends on which coordinates are used in the ``pi``-file. |
++------------+----------------------------------------------------------------------------------+
+| ``2``      | Velocity coordinate 2. Depends on which coordinates are used in the ``pi``-file. | 
++------------+----------------------------------------------------------------------------------+
+| ``i``      | The "y"-axis of the image.                                                       |
++------------+----------------------------------------------------------------------------------+
+| ``j``      | The "x"-axis of the image.                                                       | 
++------------+----------------------------------------------------------------------------------+
+| ``r``      | Radial coordinate.                                                               | 
++------------+----------------------------------------------------------------------------------+
+| ``w``      | Spectrum wavelength.                                                             | 
++------------+----------------------------------------------------------------------------------+
 
 To generate a geometric kernel function with SOFT, create a new sycout
 environment in your ``pi`` file with the format ::
@@ -37,7 +44,7 @@ environment in your ``pi`` file with the format ::
   sycout green {
       format=mat
       output=greenW.mat
-      function=image
+      function=r12ij
       pixels=60
   }
 

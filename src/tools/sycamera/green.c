@@ -4,49 +4,62 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
+#include <math.h>
 #include "config.h"
 #include "particles.h"
 #include "sfile.h"
 #include "sycamera.h"
 #include "sycout.h"
+#include "util.h"
 
 #ifdef USE_MPI
 #	include "smpi.h"
 #endif
 
-long long int sycout_green_nvel1, sycout_green_nvel2,
-	sycout_green_nrad, sycout_green_nwav,
+size_t
 	sycout_green_pixels,
+	sycout_green_nvel1, sycout_green_nvel2,
+	sycout_green_nrad, sycout_green_nwav,
 	sycout_green_ivel1, sycout_green_ivel2,
 	sycout_green_irad,
-	sycout_green_cvel2, sycout_green_cvel1,
-	sycout_green_crad, sycout_green_cwav,
 	sycout_green_subpixels,
 	sycout_green_suboffseti, sycout_green_suboffsetj;
 
+int sycout_green_weighWdf, sycout_green_haswav,
+	sycout_green_hasrho, sycout_green_hasvel1, sycout_green_hasvel2;
+
 size_t sycout_green_func_sz;
+#define SYCOUT_GREEN_MAXDIMS 6
+enum sycout_green_dimension sycout_green_format[SYCOUT_GREEN_MAXDIMS];
+size_t sycout_green_factors[SYCOUT_GREEN_MAXDIMS];
 
 #pragma omp threadprivate(sycout_green_irad,sycout_green_ivel1,sycout_green_ivel2)
 
 char *sycout_green_output;
-enum sycout_green_type sycout_green_tp;
 enum sfile_type sycout_green_outformat;
 double sycout_green_dlambda;
 double *sycout_green_func;
 
 void sycout_green_init(struct general_settings *settings) {
-	sycout_green_tp = SYCOUT_GREEN_IMAGE;
 	sycout_green_outformat = FILETYPE_SDT;
 	sycout_green_output = NULL;
 	sycout_green_pixels = 0;
 	sycout_green_func = NULL;
 	sycout_green_func_sz = 0;
+	sycout_green_weighWdf = 0;
+	sycout_green_haswav = 0;
+	sycout_green_hasrho = 0;
+	sycout_green_hasvel1 = 0;
+	sycout_green_hasvel2 = 0;
 
 	sycout_green_suboffseti = 0;
 	sycout_green_suboffsetj = 0;
 	sycout_green_subpixels  = 0;
 
-	int i, outformat_set=0;
+	int i,j,k, outformat_set=0;
+	for (i = 0; i < SYCOUT_GREEN_MAXDIMS; i++)
+		sycout_green_format[i] = SYCOUT_GREEN_NONE;
+
 	for (i = 0; i < settings->n; i++) {
 		if (!strcmp(settings->setting[i], "format")) {
 			sycout_green_outformat = sfile_name2filetype(settings->value[i]);	
@@ -62,18 +75,40 @@ void sycout_green_init(struct general_settings *settings) {
 		} else if (!strcmp(settings->setting[i], "subpixels")) {
 			sycout_green_subpixels = atoi(settings->value[i]);
 		} else if (!strcmp(settings->setting[i], "function")) {
-			if (!strcmp(settings->value[i], "full")) {
-				sycout_green_tp = SYCOUT_GREEN_FULL;
-			} else if (!strcmp(settings->value[i], "image")) {
-				sycout_green_tp = SYCOUT_GREEN_IMAGE;
-			} else if (!strcmp(settings->value[i], "spectrum")) {
-				sycout_green_tp = SYCOUT_GREEN_SPECTRUM;
-			} else if (!strcmp(settings->value[i], "total")) {
-				sycout_green_tp = SYCOUT_GREEN_TOTAL;
-			} else {
-				fprintf(stderr, "ERROR: sycout green: Invalid choice for option 'function': %s.\n", settings->value[i]);
-				exit(-1);
+			enum sycout_green_dimension dim;
+			j = 0;
+			while (settings->value[i][j]) {
+				dim = SYCOUT_GREEN_NONE;
+				switch (settings->value[i][j]) {
+					case '1': dim = SYCOUT_GREEN_VEL1; sycout_green_weighWdf++; sycout_green_hasvel1 = 1; break;
+					case '2': dim = SYCOUT_GREEN_VEL2; sycout_green_weighWdf++; sycout_green_hasvel2 = 1; break;
+					case 'i': dim = SYCOUT_GREEN_IMAGEI; break;
+					case 'j': dim = SYCOUT_GREEN_IMAGEJ; break;
+					case 'r': dim = SYCOUT_GREEN_RADIUS; sycout_green_weighWdf++; sycout_green_hasrho = 1; break;
+					case 'w': dim = SYCOUT_GREEN_SPECTRUM; sycout_green_haswav = 1; break;
+					default:
+						fprintf(stderr, "ERROR: Unrecognized Green's function dimension: %c. Allowed values: 12irw.\n", settings->value[i][j]);
+						exit(EXIT_FAILURE);
+				}
+
+				for (k = 0; k < SYCOUT_GREEN_MAXDIMS; k++) {
+					if (sycout_green_format[k] == SYCOUT_GREEN_NONE) {
+						sycout_green_format[k] = dim;
+						break;
+					} else if (sycout_green_format[k] == dim) {
+						fprintf(stderr, "ERROR: Green's function dimensions may not be repeated in the format.\n");
+						exit(EXIT_FAILURE);
+					}
+				}
+
+				j++;
 			}
+
+			/* If all of r, v1 and v2 are free parameters (i.e.
+			 * dimensions in the GF) we shouldn't weigh with
+			 * any distribution function. */
+			if (sycout_green_weighWdf == 3) sycout_green_weighWdf = 0;
+			else sycout_green_weighWdf = 1;
 		} else {
 			fprintf(stderr, "ERROR: Unrecognized option '%s'.\n", settings->setting[i]);
 			exit(-1);
@@ -82,42 +117,74 @@ void sycout_green_init(struct general_settings *settings) {
 
 	/* Output set? */
 	if (sycout_green_output == NULL) {
-		fprintf(stderr, "ERROR: sycout green: No output filename specified.\n");
-		exit(-1);
+		fprintf(stderr, "ERROR: (sycout green): No output filename specified.\n");
+		exit(EXIT_FAILURE);
 	}
 
-	/* Green's function type */
-	if (sycout_green_tp == SYCOUT_GREEN_IMAGE || sycout_green_tp == SYCOUT_GREEN_FULL) {
-		if (sycout_green_pixels <= 0) {
-			fprintf(stderr, "ERROR: The number of pixels for the Green's function has not been set.\n");
-			exit(-1);
+	/* Check Green's function format */
+	if (sycout_green_format[0] == SYCOUT_GREEN_NONE) {
+		fprintf(stderr, "ERROR: (sycout green): The Green's function is 0-dimensional.\n");
+		exit(EXIT_FAILURE);
+	}
+	printf("Green's function format: ");
+	char *s, S[20];
+	int verified = 0;
+	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
+		if (i > 0) printf(" x ");
+		switch (sycout_green_format[i]) {
+			case SYCOUT_GREEN_RADIUS: printf("RADIUS"); break;
+			case SYCOUT_GREEN_SPECTRUM: printf("SPECTRUM"); break;
+			case SYCOUT_GREEN_IMAGEI:
+				printf("PIXELS-I");
+				goto VERIFY_PIXELS;
+			case SYCOUT_GREEN_IMAGEJ:
+				printf("PIXELS-J");
+VERIFY_PIXELS:
+				if (sycout_green_pixels > 0)
+					verified = 1;
+				if (sycout_green_subpixels == 0)
+					sycout_green_subpixels = sycout_green_pixels;
+				
+				if (sycout_green_suboffseti+sycout_green_subpixels <= sycout_green_pixels)
+					verified = 2;
+				if (sycout_green_suboffsetj+sycout_green_subpixels <= sycout_green_pixels)
+					verified = 3;
+				break;
+			case SYCOUT_GREEN_VEL1:
+				s = particles_param1_name();
+				strcpy(S, s);
+				for (j=0; S[j]; j++) S[j] = chrupr(S[j]);
+				printf("%s", S);
+				break;
+			case SYCOUT_GREEN_VEL2:
+				s = particles_param2_name();
+				strcpy(S, s);
+				for (j=0; S[j]; j++) S[j] = chrupr(S[j]);
+				printf("%s", S);
+				break;
+			default: break;
 		}
+	}
+	putc('\n', stdout);
 
-		/* Verify pixel bounds */
-		if (sycout_green_subpixels == 0)
-			sycout_green_subpixels = sycout_green_pixels;
-		
-		if (sycout_green_suboffseti+sycout_green_subpixels > sycout_green_pixels) {
-			fprintf(stderr, "ERROR: Subset image large than in i direction than actual image.\n");
-			exit(-1);
-		}
-		if (sycout_green_suboffsetj+sycout_green_subpixels > sycout_green_pixels) {
-			fprintf(stderr, "ERROR: Subset image large than in j direction than actual image.\n");
-			exit(-1);
-		}
-	} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {
-	} else if (sycout_green_tp == SYCOUT_GREEN_TOTAL) {}
+	switch (verified) {
+		case 0: fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels); goto EXIT;
+		case 1: fprintf(stderr, "ERROR: (sycout green): Subset image larger in i direction than actual image.\n"); goto EXIT;
+		case 2: fprintf(stderr, "ERROR: (sycout green): Subset image larger in j direction than actual image.\n");
+		EXIT:
+			exit(EXIT_FAILURE);
+	}
 
 	/* Was the output format set? */
 	if (outformat_set) {
 		if (sycout_green_outformat == FILETYPE_UNKNOWN) {
-			fprintf(stderr, "ERROR: sycout green: Unrecognized output file format specified.\n");
+			fprintf(stderr, "ERROR: (sycout green): Unrecognized output file format specified.\n");
 			exit(-1);
 		}
 	} else {
 		sycout_green_outformat = sfile_get_filetype(sycout_green_output);
 		if (sycout_green_outformat == FILETYPE_UNKNOWN) {
-			fprintf(stderr, "ERROR: sycout green: Unrecognized output file format of file '%s'.\n", sycout_green_output);
+			fprintf(stderr, "ERROR: (sycout green): Unrecognized output file format of file '%s'.\n", sycout_green_output);
 			exit(-1);
 		}
 	}
@@ -133,37 +200,58 @@ void sycout_green_init_run(void) {
 			sycout_green_nrad  = ijk[0];
 			sycout_green_nvel1 = ijk[1];
 			sycout_green_nvel2 = ijk[2];
-
 			sycout_green_nwav  = sycamera_spectrum_length();
 
-			size_t size;
-			/* Green's function type */
-			if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {
-				size = sycout_green_subpixels*sycout_green_subpixels*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad;
+			/* Compute size of Green's function and build list of factors */
+			size_t size = 1;
+			for (i = 0; i < SYCOUT_GREEN_MAXDIMS; i++)
+				sycout_green_factors[i] = 1;
 
-				sycout_green_cvel2 = sycout_green_subpixels*sycout_green_subpixels;
-				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
-				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
-			} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {
-				size = sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad*sycout_green_nwav;
+			int j;
+			for (j = SYCOUT_GREEN_MAXDIMS-1; j >= 0; j--) {
+				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
 
-				sycout_green_cvel2 = sycout_green_nwav;
-				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
-				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
-			} else if (sycout_green_tp == SYCOUT_GREEN_TOTAL) {
-				size = sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad;
-
-				sycout_green_cvel2 = 1;
-				sycout_green_cvel1 = sycout_green_nvel2;
-				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
-			} else {/* Both */
-				size = sycout_green_subpixels*sycout_green_subpixels*sycout_green_nvel1*sycout_green_nvel2*sycout_green_nrad*sycout_green_nwav;
-
-				sycout_green_cvel2 = sycout_green_subpixels*sycout_green_subpixels*sycout_green_nwav;
-				sycout_green_cvel1 = sycout_green_nvel2 * sycout_green_cvel2;
-				sycout_green_crad  = sycout_green_cvel1*sycout_green_nvel1;
+				switch (sycout_green_format[j]) {
+					case SYCOUT_GREEN_VEL1:
+						size *= sycout_green_nvel1;
+						if (j-1 >= 0) sycout_green_factors[j-1] = sycout_green_nvel1;
+						break;
+					case SYCOUT_GREEN_VEL2:
+						size *= sycout_green_nvel2;
+						if (j-1 >= 0) sycout_green_factors[j-1] = sycout_green_nvel2;
+						break;
+					case SYCOUT_GREEN_IMAGEI:
+					case SYCOUT_GREEN_IMAGEJ:
+						size *= sycout_green_subpixels;
+						if (j-1 >= 0) sycout_green_factors[j-1] = sycout_green_subpixels;
+						break;
+					case SYCOUT_GREEN_RADIUS:
+						size *= sycout_green_nrad;
+						if (j-1 >= 0) sycout_green_factors[j-1] = sycout_green_nrad;
+						break;
+					case SYCOUT_GREEN_SPECTRUM:
+						size *= sycout_green_nwav;
+						if (j-1 >= 0) sycout_green_factors[j-1] = sycout_green_nwav;
+						break;
+					default:
+						fprintf(
+							stderr,
+							"WARNING: (sycout green): Unrecognized Green's function dimension: %d. Ignoring when allocating memory.\n",
+							sycout_green_format[j]
+						);
+						break;
+				}
 			}
-			
+
+			/* Generate factors array (eval cumulative product) */
+			for (j = SYCOUT_GREEN_MAXDIMS-1; j >= 0; j--) {
+				printf("[%d] = %zu\n", j, sycout_green_factors[j]);
+				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
+				else sycout_green_factors[j] *= sycout_green_factors[j+1];
+
+				printf("[%d] = %zu\n", j, sycout_green_factors[j]);
+			}
+
 			/* Print note about how much memory is required */
 			char suffix[] = " kMGTP";
 			double rsize = size*sizeof(double);
@@ -180,7 +268,6 @@ void sycout_green_init_run(void) {
 			sycout_green_func = malloc(sizeof(double)*size);
 			
 			/* Initialize to zero */
-			//memset(sycout_green_func, 0, size*sizeof(double));
 			for (i = 0; i < size; i++) {
 				sycout_green_func[i] = 0.0;
 			}
@@ -196,95 +283,85 @@ void sycout_green_init_particle(particle *p) {
 
 void sycout_green_deinit_run(void) {}
 void sycout_green_step(struct sycout_data *data) {
-	//long long int i = (long long int)(data->i*sycout_green_subpixels),
-	//	j = (long long int)(data->j*sycout_green_subpixels),
-	long long int i = (long long int)(data->i*sycout_green_pixels),
-		j = (long long int)(data->j*sycout_green_pixels),
-		index;
+	size_t I = (size_t)(data->i*sycout_green_pixels),
+		J = (size_t)(data->j*sycout_green_pixels),
+		index = 0, wavindex = 0;
 	
-	if (sycout_green_tp == SYCOUT_GREEN_IMAGE) {	/* IMAGE */
-		/* Ignore pixels outside of subimage */
-		if (i < sycout_green_suboffseti || i >= sycout_green_subpixels+sycout_green_suboffseti)
-			return;
-		if (j < sycout_green_suboffsetj || j >= sycout_green_subpixels+sycout_green_suboffsetj)
-			return;
+	if (I < sycout_green_suboffseti || I >= sycout_green_subpixels+sycout_green_suboffseti)
+		return;
+	if (J < sycout_green_suboffsetj || J >= sycout_green_subpixels+sycout_green_suboffsetj)
+		return;
 
-		i -= sycout_green_suboffseti;
-		j -= sycout_green_suboffsetj;
-			
-		/*
-		index = i * sycout_green_cpixels2 +
-				j * sycout_green_cpixels  +
-				sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2;
-		index = index*sycout_green_nrad + sycout_green_irad;
-		*/
-		index = sycout_green_irad * sycout_green_crad +
-				sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2 * sycout_green_cvel2 +
-				i * sycout_green_subpixels + j;
-
-		sycout_green_func[index] += data->brightness * data->RdPhi * data->Jdtdrho / particles_get_drho();
-	} else if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM) {	/* SPECTRUM */
-		/*
-		index = sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2;
-		index = index*sycout_green_nrad + sycout_green_irad;
-		index *= sycout_green_nwav;
-		*/
-		index = sycout_green_irad * sycout_green_crad +
-				sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2 * sycout_green_cvel2;
-
-		double *spectrum = sycamera_spectrum_get();
-		double diffel = data->RdPhi * data->Jdtdrho;
-		long long int  i;
-		for (i = 0; i < sycout_green_nwav; i++) {
-			sycout_green_func[index+i] += spectrum[i] * diffel;
+	I -= sycout_green_suboffseti;
+	J -= sycout_green_suboffsetj;
+	
+	/* Compute index */
+	size_t i;
+	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
+		switch (sycout_green_format[i]) {
+			case SYCOUT_GREEN_VEL1: index += sycout_green_ivel1*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_VEL2: index += sycout_green_ivel2*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_IMAGEI: index += I*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_IMAGEJ: index += J*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_RADIUS: index += sycout_green_irad*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_SPECTRUM: wavindex = i; break;
+			default: fprintf(
+					stderr,
+					"ERROR: (sycout green): Unrecognized GF dimension: %d. Ignoring when computing index.\n",
+					sycout_green_format[i]
+				);
+				break;
 		}
-	} else if (sycout_green_tp == SYCOUT_GREEN_FULL) {	/* FULL */
-		/* Ignore pixels outside of subimage */
-		if (i < sycout_green_suboffseti || i >= sycout_green_subpixels+sycout_green_suboffseti)
-			return;
-		if (j < sycout_green_suboffsetj || j >= sycout_green_subpixels+sycout_green_suboffsetj)
-			return;
+	}
 
-		i -= sycout_green_suboffseti;
-		j -= sycout_green_suboffsetj;
-			
-		/*
-		index = i * sycout_green_cpixels2 +
-				j * sycout_green_cpixels  +
-				sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2;
-		index = index*sycout_green_nrad + sycout_green_irad;
-		index *= sycout_green_nwav;
-		*/
-		index = sycout_green_irad * sycout_green_crad +
-				sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2 * sycout_green_cvel2 +
-				i * sycout_green_subpixels + j;
+	//printf("index = %zu,  r = %zu, i = %zu, j = %zu\n", index, sycout_green_irad, I, J);
 
+	/* Compute differential element */
+	double diffel = data->RdPhi * data->Jdtdrho;
+	if (sycout_green_weighWdf) diffel *= data->distribution_function;
+	if (sycout_green_hasrho) diffel /= fabs(particles_get_drho());
+	if (!sycout_green_hasvel1) diffel *= fabs(particles_get_dvel1());
+	if (!sycout_green_hasvel2) diffel *= fabs(particles_get_dvel2());
+
+	/* Set value of Green's function */
+	if (sycout_green_haswav) {
 		double *spectrum = sycamera_spectrum_get();
-		double diffel = data->RdPhi * data->Jdtdrho / particles_get_drho();
-		long long int si, gi, pixels2 = sycout_green_subpixels*sycout_green_subpixels;
-		for (si = gi = 0; si < sycout_green_nwav; si++, gi += pixels2) {
-			sycout_green_func[index+gi] += spectrum[si] * diffel;
+		/* If we have to weigh with the distribution function,
+		 * then any or all of rho, vel1 and vel2 are NOT part
+		 * of the Green's function. That implies that two threads
+		 * can work on the same element of the GF at a time,
+		 * which requires 'omp critical' pragmas. */
+		if (sycout_green_weighWdf) {
+			#pragma omp critical
+			{
+				for (i = 0; i < sycout_green_nwav; i++) {
+					sycout_green_func[index+i] += spectrum[i] * diffel;
+					index += sycout_green_factors[wavindex];
+				}
+			}
+		} else {
+			for (i = 0; i < sycout_green_nwav; i++) {
+				sycout_green_func[index+i] += spectrum[i] * diffel;
+				index += sycout_green_factors[wavindex];
+			}
 		}
-	} else if (sycout_green_tp == SYCOUT_GREEN_TOTAL) {	/* TOTAL */
-		/*
-		index = sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2;
-		index = index*sycout_green_nrad + sycout_green_irad;
-		*/
-		index = sycout_green_irad * sycout_green_crad +
-				sycout_green_ivel1 * sycout_green_cvel1 +
-				sycout_green_ivel2;
-
-		double diffel = data->RdPhi * data->Jdtdrho / particles_get_drho();
-		sycout_green_func[index] += data->brightness * diffel;
+	} else {
+		/* If we have to weigh with the distribution function,
+		 * then any or all of rho, vel1 and vel2 are NOT part
+		 * of the Green's function. That implies that two threads
+		 * can work on the same element of the GF at a time,
+		 * which requires 'omp critical' pragmas. */
+		if (sycout_green_weighWdf) {
+			#pragma omp critical
+			{
+				sycout_green_func[index] += data->brightness * diffel;
+			}
+		} else {
+			sycout_green_func[index] += data->brightness * diffel;
+		}
 	}
 }
+
 #ifdef USE_MPI
 void sycout_green_mpi_receive(int nprocesses) {
 	int i;
@@ -314,27 +391,46 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 		sFILE *sf = sfile_init(sycout_green_outformat);
 		sf->open(sf, sycout_green_output, SFILE_MODE_WRITE);
 
-		/* Type of function */
-		switch (sycout_green_tp) {
-			case SYCOUT_GREEN_IMAGE:
-				sf->write_string(sf, "type", "image", 5);
-				break;
-			case SYCOUT_GREEN_SPECTRUM:
-				sf->write_string(sf, "type", "spectrum", 8);
-				break;
-			case SYCOUT_GREEN_TOTAL:
-				sf->write_string(sf, "type", "total", 5);
-				break;
-			case SYCOUT_GREEN_FULL:
-				sf->write_string(sf, "type", "both", 4);
-				break;
-			default:
-				sf->write_string(sf, "type", "unknown", 7);
-				break;
+		/* Format of function */
+		char formats[SYCOUT_GREEN_MAXDIMS+1];
+		int haspixels = 0;
+		for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
+			switch (sycout_green_format[i]) {
+				case SYCOUT_GREEN_VEL1:
+					formats[i] = '1';
+					break;
+				case SYCOUT_GREEN_VEL2:
+					formats[i] = '2';
+					break;
+				case SYCOUT_GREEN_RADIUS:
+					formats[i] = 'r';
+					break;
+				case SYCOUT_GREEN_IMAGEI:
+					haspixels = 1;
+					formats[i] = 'i';
+					break;
+				case SYCOUT_GREEN_IMAGEJ:
+					haspixels = 1;
+					formats[i] = 'j';
+					break;
+				case SYCOUT_GREEN_SPECTRUM:
+					formats[i] = 'w';
+					break;
+				default:
+					fprintf(
+						stderr,
+						"WARNING: (sycout green): Unrecognized GF dimension: %d. Ignoring during output.\n",
+						sycout_green_format[i]
+					);
+					break;
+			}
 		}
 
+		formats[i] = 0;
+		sf->write_string(sf, "format", formats, i);
+
 		/* Number of pixels */
-		if (sycout_green_tp == SYCOUT_GREEN_SPECTRUM || sycout_green_tp == SYCOUT_GREEN_TOTAL) {
+		if (!haspixels) {
 			pixels = 1;
 			sf->write_list(sf, "pixels", &pixels, 1);
 		} else {
@@ -352,34 +448,49 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 
 		/* r vector */
 		b = particles_get_bounds();
-		v = malloc(sizeof(double)*b[2]);
+		if (sycout_green_hasrho) {
+			v = malloc(sizeof(double)*b[2]);
 
-		for (i = 0; i < b[2]; i++)
-			v[i] = b[0] + ((double)i)/((double)b[2]) * (b[1]-b[0]);
+			for (i = 0; i < b[2]; i++)
+				v[i] = b[0] + ((double)i)/((double)b[2]) * (b[1]-b[0]);
 
-		sf->write_list(sf, "r", v, b[2]);
-		free(v);
+			sf->write_list(sf, "r", v, b[2]);
+			free(v);
+		} else {
+			double d = 0;
+			sf->write_list(sf, "r", &d, 1);
+		}
 
 		/* param1 vector */
-		v = malloc(sizeof(double)*b[5]);
+		if (sycout_green_hasvel1) {
+			v = malloc(sizeof(double)*b[5]);
 
-		for (i = 0; i < b[5]; i++)
-			v[i] = b[3] + ((double)i)/((double)b[5]) * (b[4]-b[3]);
+			for (i = 0; i < b[5]; i++)
+				v[i] = b[3] + ((double)i)/((double)b[5]) * (b[4]-b[3]);
 
-		sf->write_list(sf, "param1", v, b[5]);
-		free(v);
+			sf->write_list(sf, "param1", v, b[5]);
+			free(v);
+		} else {
+			double d = 0;
+			sf->write_list(sf, "param1", &d, 1);
+		}
 
 		/* param2 vector */
-		v = malloc(sizeof(double)*b[8]);
+		if (sycout_green_hasvel2) {
+			v = malloc(sizeof(double)*b[8]);
 
-		for (i = 0; i < b[8]; i++)
-			v[i] = b[6] + ((double)i)/((double)b[8]) * (b[7]-b[6]);
+			for (i = 0; i < b[8]; i++)
+				v[i] = b[6] + ((double)i)/((double)b[8]) * (b[7]-b[6]);
 
-		sf->write_list(sf, "param2", v, b[8]);
-		free(v);
+			sf->write_list(sf, "param2", v, b[8]);
+			free(v);
+		} else {
+			double d = 0;
+			sf->write_list(sf, "param2", &d, 1);
+		}
 
 		/* Wavelength vector */
-		if (sycout_green_tp == SYCOUT_GREEN_IMAGE || sycout_green_tp == SYCOUT_GREEN_TOTAL) {
+		if (!sycout_green_haswav) {
 			double wavelengths = 0;
 			sf->write_list(sf, "wavelengths", &wavelengths, 1);
 		} else {
