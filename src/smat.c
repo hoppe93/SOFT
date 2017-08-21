@@ -160,14 +160,12 @@ void smat_write_array(sFILE *s, const char *name, double **arr, size_t rows, siz
 	mxArray *ma;
 	MATFile *mfp = (MATFile*)s->identifier;
 
-	printf("func-size = %zu x %zu\n", rows, cols);
 	ma = mxCreateDoubleMatrix(rows, cols, mxREAL);
 	if (ma == NULL) {
 		fprintf(stderr, "ERROR: Unable to allocate MATLAB array for '%s'.\n", name);
 		return;
 	}
 
-	printf("Getting pointer...\n");
 	t = mxGetPr(ma);
 	for (i = 0; i < rows; i++) {
 		for (j = 0; j < cols; j++) {
@@ -175,7 +173,6 @@ void smat_write_array(sFILE *s, const char *name, double **arr, size_t rows, siz
 		}
 	}
 
-	printf("Putting variable...\n");
 	status = matPutVariable(mfp, name, ma);
 	mxDestroyArray(ma);
 	if (status != 0) {

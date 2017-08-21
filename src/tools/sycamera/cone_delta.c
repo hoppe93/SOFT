@@ -267,6 +267,7 @@ void cone_delta_hyperbola_intersections(
 	double arg2 = (-sqr-d)*b;
 
 	//if (arg1 <= 0.0) arg1 = -arg1;
+	/* Only allow real solutions */
 	if (arg1 > 0) {
 		*t1 = log(arg1);
 
@@ -279,6 +280,7 @@ void cone_delta_hyperbola_intersections(
 	} else *ok1 = 0;
 
 	//if (arg2 <= 0.0) arg2 = -arg2;
+	/* Only allow real solutions */
 	if (arg2 > 0) {
 		*t2 = log(arg2);
 

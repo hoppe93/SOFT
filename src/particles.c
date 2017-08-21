@@ -697,9 +697,9 @@ double *particles_get_bounds(void) {
 	return bounds;
 }
 
-double particles_get_drho(void) {
-	return particles_dr;
-}
+double particles_get_drho(void) { return particles_dr; }
+double particles_get_dvel1(void) { return particles_dparam1; }
+double particles_get_dvel2(void) { return particles_dparam2; }
 
 double particles_compute_X_pol(double ppar, double pperp, double r) {
 	double Beffx, Beffy, Beffz, Beffpar, Xdotr, Xdotz;
