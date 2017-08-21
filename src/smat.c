@@ -160,7 +160,7 @@ void smat_write_array(sFILE *s, const char *name, double **arr, size_t rows, siz
 	mxArray *ma;
 	MATFile *mfp = (MATFile*)s->identifier;
 
-	printf("func-size = %d x %d\n", rows, cols);
+	printf("func-size = %zu x %zu\n", rows, cols);
 	ma = mxCreateDoubleMatrix(rows, cols, mxREAL);
 	if (ma == NULL) {
 		fprintf(stderr, "ERROR: Unable to allocate MATLAB array for '%s'.\n", name);
