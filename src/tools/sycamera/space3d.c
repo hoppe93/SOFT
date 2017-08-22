@@ -128,7 +128,8 @@ void sycout_space3d_init(struct general_settings *set) {
 	}
 }
 /**
- * Allocate memory for map/image */
+ * Allocate memory for map/image
+ **/
 void sycout_space3d_init_run(void) {
 	if (space3d_type == SPACE3D_MT_REAL) {
 		space3d_map = malloc(sizeof(space3d_real_t));

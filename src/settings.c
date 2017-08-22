@@ -219,6 +219,7 @@ settings *settings_interpret() {
 	set->magnetic = NULL;
 	set->nmagnetic = 0;
 	set->tolerance = 0;
+	set->progress = 0;
 	set->maxtimestep = 0;
 	set->equation = NULL;
 	set->tool = NULL;
@@ -229,7 +230,6 @@ settings *settings_interpret() {
 	set->particles = NULL;
 	set->nparts = 0;
 	set->warnoncollision = 0;
-	//set->no_outer_wall = 0;
 	set->threads = omp_get_max_threads();
 	set->interptimestep = 0;
 	set->nodrifts = 0;
@@ -261,14 +261,20 @@ settings *settings_interpret() {
 						printf("Dropping drift terms from the guiding-center equations of motion\n");
 						set->nodrifts = 1;
 					}
+				} else if (!strcmp(name, "progress")) {
+					set->progress = atoi(tkn->val);
+					if (set->progress < 0) {
+						fprintf(stderr, "ERROR: Progress can only be reported a positive number of times, or not at all. Current value: %d.\n", set->progress);
+						exit(EXIT_FAILURE);
+					}
 				} else if (!strcmp(name, "threads")) {
 					set->threads = atoi(tkn->val);
 					if (set->threads <= 0) {
-						printf("ERROR: Bad number of threads selected: %d\n", set->threads);
+						fprintf(stderr, "ERROR: Bad number of threads selected: %d\n", set->threads);
 						exit(EXIT_FAILURE);
 					}
 					if (set->threads != omp_get_max_threads() && set->threads != 1)
-						printf("WARNING: Optimal number of threads to use is %d\n", omp_get_max_threads());
+						fprintf(stderr, "WARNING: Optimal number of threads to use is %d\n", omp_get_max_threads());
 
 				} else if (!strcmp(name, "tolerance")) {
 					set->tolerance = atof(tkn->val);
@@ -284,7 +290,7 @@ settings *settings_interpret() {
 					else if (!strcmp(tkn->val, "no"))
 						set->warnoncollision = 0;
 					else
-						printf("WARNING: Unrecognized value for 'warnoncollision': '%s'. Valid values are 'yes' or 'no'.\n", tkn->val);
+						fprintf(stderr, "WARNING: Unrecognized value for 'warnoncollision': '%s'. Valid values are 'yes' or 'no'.\n", tkn->val);
 				} else
 					/* Else, we assume it's a particle setting */
 					settings_interpret_value(default_particle, name, tkn->val);
@@ -315,7 +321,7 @@ settings *settings_interpret() {
 				expect(TKN_BLOCK_START);
 				while (!settings_eof && token() != TKN_BLOCK_END) {
 					if (tkn->type != TKN_NAME) {
-						fprintf(stderr, "Expected setting name!\n");
+						fprintf(stderr, "ERROR: Expected setting name!\n");
 						exit(-1);
 					}
 
@@ -342,7 +348,7 @@ settings *settings_interpret() {
 				expect(TKN_BLOCK_START);
 				while (!settings_eof && token() != TKN_BLOCK_END) {
 					if (tkn->type != TKN_NAME) {
-						fprintf(stderr, "Expected setting name!\n");
+						fprintf(stderr, "ERROR: Expected setting name!\n");
 						exit(-1);
 					}
 

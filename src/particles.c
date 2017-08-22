@@ -1,16 +1,18 @@
 /* Particle generator */
 
+#include <math.h>
+#include <omp.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+
 #include "config.h"
 #include "constants.h"
 #include "domain.h"
 #include "magnetic_axis.h"
 #include "magnetic_field.h"
-#include <math.h>
 #include "global.h"
-#include <omp.h>
 #include "particles.h"
-#include <stdlib.h>
-#include <stdio.h>
 #include "util.h"
 
 #ifdef USE_MPI
@@ -23,7 +25,6 @@ double particles_r0, particles_r1,
 	   particles_param10, particles_param11,
 	   particles_param20, particles_param21,
 	   particles_dparam1, particles_dparam2, particles_dr;
-//enum particles_inputtype particles_param1type, particles_param2type;
 enum particles_radial_coordinate particles_rcoord;
 
 struct particles_paramspec *particles_param1spec, *particles_param2spec;
@@ -40,7 +41,11 @@ int particles_r=0, particles_param1=0, particles_param2=0,
 
 /* Variables used when particles are generated centrally */
 int particles_g_r=0, particles_g_param1=0, particles_g_param2=0,
-	particles_g_count=0, particles_g_done=0;
+	particles_g_done=0, particles_g_nextprogress=0,
+	particles_g_progressteps=0, particles_g_dprogress=0,
+	particles_g_progresscurr=0, particles_g_count=0;
+
+time_t particles_lastprogress=0;
 
 /* Pre-computed differential element */
 double particles_diffel, particles_rinner, particles_router;
@@ -184,10 +189,7 @@ void particles_init(struct particlespec *spec) {
 			particles_rcoord = PARTICLES_RC_MAJOR;
 		} else particles_r0 = magnetic_axis_r;
 	}
-	/*
-	particles_ppar0 = spec->ppar0*MOMENTUM; particles_ppar1 = spec->ppar1*MOMENTUM; particles_pparn = spec->pparn;
-	particles_pperp0 = spec->pperp0*MOMENTUM; particles_pperp1 = spec->pperp1*MOMENTUM; particles_pperpn = spec->pperpn;
-	*/
+
 	if (spec->inputtype & PARTICLES_PPAR)
 		particles_set_param(spec->ppar0, spec->ppar1, spec->pparn, PARTICLES_PPAR);
 	if (spec->inputtype & PARTICLES_PPERP)
@@ -203,14 +205,24 @@ void particles_init(struct particlespec *spec) {
 	if (!verify_input_parameters())
 		exit(1);
 
+	/* Compute next point to report progress at */
+	int totalpoints = particles_rn*particles_param1n*particles_param2n;
+	if (particles_g_progressteps > 0) {
+		particles_g_dprogress = totalpoints / particles_g_progressteps;
+		particles_g_nextprogress = particles_g_dprogress;
+		if (particles_gentype == PARTICLES_GT_EVEN)
+			fprintf(stderr, "WARNING: Progress can only be reported when particles are launched in 'queue' mode.\n");
+
+		particles_lastprogress = time(NULL);
+	} else particles_g_nextprogress = totalpoints+1;	/* Never report progress */
+
+	/* Compute differential element */
 	particles_diffel = 1.;
-	//if (particles_rcoord == PARTICLES_RC_MAJOR) {
 	if (particles_rn <= 1 || particles_r0 == particles_r1) particles_dr = 0.;
 	else {
 		particles_dr = (particles_r1-particles_r0)/(particles_rn-1);
 		particles_diffel *= fabs(particles_dr);
 	}
-	//}
 
 	if (particles_param1n <= 1 || particles_param10 == particles_param11) particles_dparam1 = 0.;
 	else {
@@ -358,11 +370,19 @@ void particles_init_run(int threadid, int nthreads, int mpi_rank, int nprocesses
 	}
 }
 
+/**
+ * Returns the total number of particles
+ * launched by SOFT.
+ */
 int particles_numberof(void) {
-	//if (particles_gentype == PARTICLES_GT_EVEN)
+	if (particles_gentype == PARTICLES_GT_EVEN)
 		return particles_count;
-	//else return particles_g_count;
+	else return particles_g_count;
 }
+
+/**
+ * Returns 1 when all particles have been
+ * processed. Returns 0 otherwise. */
 int particles_stop_condition(void) {
 	if (particles_gentype == PARTICLES_GT_EVEN)
 		return particles_done;
@@ -510,7 +530,15 @@ particle *particles_generate_queue(void) {
 		/* Move on to next particle */
 		particles_g_r++;
 		particles_g_count++;
-		particles_count++;
+
+		if (particles_g_count == particles_g_nextprogress) {
+			particles_g_progresscurr++;
+			particles_reportprogress(
+				particles_g_progresscurr, particles_g_progressteps,
+				particles_g_count, particles_rn*particles_param1n*particles_param2n
+			);
+			particles_g_nextprogress += particles_g_dprogress;
+		}
 
 		if (particles_g_r >= particles_rn) {
 			particles_g_r = 0;
@@ -755,3 +783,28 @@ char *particles_param1_name(void) {
 char *particles_param2_name(void) {
 	return particles_param2spec->name;
 }
+
+void particles_set_progress(int progsteps) {
+	particles_g_progressteps = progsteps;
+}
+void particles_reportprogress(int curr, int totsteps, int parts, int ptot) {
+#define SECONDS_PER_DAY (60*60*24)
+#define SECONDS_PER_HOUR (60*60)
+#define SECONDS_PER_MINUTE (60)
+	time_t t = time(NULL);
+
+	/* Compute time difference */
+	time_t dt = t-particles_lastprogress;
+	int days = dt / SECONDS_PER_DAY; dt %= SECONDS_PER_DAY;
+	int hours = dt / SECONDS_PER_HOUR; dt %= SECONDS_PER_HOUR;
+	int mins = dt / SECONDS_PER_MINUTE; dt %= SECONDS_PER_MINUTE;
+	int secs = dt;
+
+	if (days > 0) printf("PROGRESS (%d/%d): %d days, %d hours, %d minutes and %d seconds since last -- %d particles of %d done.\n", curr, totsteps, days, hours, mins, secs, parts, ptot);
+	else if (hours > 0) printf("PROGRESS (%d/%d): %d hours, %d minutes and %d seconds since last -- %d particles of %d done.\n", curr, totsteps, hours, mins, secs, parts, ptot);
+	else if (mins > 0) printf("PROGRESS (%d/%d): %d minutes and %d seconds since last -- %d particles of %d done.\n", curr, totsteps, mins, secs, parts, ptot);
+	else printf("PROGRESS (%d/%d): %d seconds since last -- %d particles of %d done.\n", curr, totsteps, secs, parts, ptot);
+
+	particles_lastprogress = t;
+}
+

@@ -40,6 +40,7 @@ typedef struct {
 							 n = Interpolate with n points between timesteps (int),
 							 x = Interpolate so that the timestep is at most x (double < 1) */
 	int nodrifts;		/* If 1, drop drift terms from the GC EOM's */
+	int progress;		/* How many times to report progress on simulation */
 } settings;
 
 enum settings_token_type {

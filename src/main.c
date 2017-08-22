@@ -487,10 +487,15 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 #endif
 
-	/********************/
-	/* Foreach particle */
-	/********************/
+	/************************/
+	/* Initialize particles */
+	/************************/
 	struct particlespec *spec = set->particlespec;
+
+	/* Should progress be reported? (set->progress
+	 * contains the number of times to report progress) */
+	if (set->progress > 0)
+		particles_set_progress(set->progress);
 
 	/* Determine how many threads (and MPI processes) are needed */
 	/* Without MPI, we can easily run fewer particles than the

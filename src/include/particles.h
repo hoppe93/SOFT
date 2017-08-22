@@ -78,5 +78,7 @@ double particles_get_dvel2(void);
 double particles_find_axis_r(double, double);
 char *particles_param1_name(void);
 char *particles_param2_name(void);
+void particles_set_progress(int);
+void particles_reportprogress(int, int, int, int);
 
 #endif/*_PARTICLES_H*/
