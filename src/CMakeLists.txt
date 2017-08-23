@@ -15,7 +15,7 @@ include_directories("${PROJECT_SOURCE_DIR}/src/include")
 # Set libraries to use
 option(BUILD_TESTS "Build the test programs" OFF)
 option(DEBUG "Compile with debug symbols and no optimzations" OFF)
-option(USE_HDF5 "Link in support for HDF5" ON)
+option(USE_HDF5 "Link in support for HDF5" OFF)
 option(USE_MATLAB "Link in support for MATLAB *.mat files" ON)
 option(USE_MPI "Compile with MPI support" OFF)
 
