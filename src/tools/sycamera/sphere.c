@@ -25,3 +25,6 @@ double *sphere_get_wavelengths(void) {
 double *sphere_get_spectrum(void) {
 	return NULL;
 }
+int sphere_get_spectrum_length(void) {
+	return 0;
+}

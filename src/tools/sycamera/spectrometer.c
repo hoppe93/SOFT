@@ -41,8 +41,8 @@ void sycout_spectrometer_init(struct general_settings *settings) {
 
 void sycout_spectrometer_init_run(void) {
 	int i;
-	double *lambdas = sycamera_spectrum_get_wavelengths();
-	sycout_spectrometer_nlambdas = sycamera_spectrum_length();
+	double *lambdas = sycamera_get_wavelengths();
+	sycout_spectrometer_nlambdas = sycamera_get_spectrum_length();
 	sycout_spectrometer_lcounts = 0;
 
 	sycout_spectrometer_lwavelengths = malloc(sizeof(double)*sycout_spectrometer_nlambdas);
@@ -82,7 +82,7 @@ void sycout_spectrometer_deinit_run(void) {
  */
 void sycout_spectrometer_step(struct sycout_data *data) {
 	int i;
-	double *p = sycamera_spectrum_get();
+	double *p = sycamera_get_spectrum();
 	for (i = 0; i < sycout_spectrometer_nlambdas; i++) {
 		sycout_spectrometer_lresult[i] += p[i] * data->differential;
 	}

@@ -55,6 +55,8 @@ void (*intensity_init_particle)(particle*)=NULL;
 void (*intensity_init_step)(step_data*)=NULL;
 double (*intensity_function)(step_data*, vector*, vector*, vector*, vector*, vector*)=NULL;
 double *(*intensity_spectrum)(void)=NULL;
+double *(*intensity_wavelengths)(void)=NULL;
+int (*intensity_spectrum_length)(void)=NULL;
 
 #pragma omp threadprivate(sol1,sol2,temps,lasttime,sycamera_distfunc_weight,sycamera_lasti,sycamera_lastj,sycamera_lastlx,sycamera_lastly,sycamera_particle_diffel)
 
@@ -92,6 +94,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	intensity_init_step = &cone_delta_init_step;
 	intensity_function = &cone_delta_get_intensity;
 	intensity_spectrum = &cone_delta_get_spectrum;
+	intensity_wavelengths = &cone_delta_get_wavelengths;
+	intensity_spectrum_length = &cone_delta_get_spectrum_length;
 
 	/* Loop over all settings */
 	int i;
@@ -107,6 +111,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_init_step = &cone_delta_init_step;
 				intensity_function = &cone_delta_get_intensity;
 				intensity_spectrum = &cone_delta_get_spectrum;
+				intensity_wavelengths = &cone_delta_get_wavelengths;
+				intensity_spectrum_length = &cone_delta_get_spectrum_length;
 			} else if (!strcmp(set->value[i], "dist")) {
 				printf("Selecting cone model 'dist'...\n");
 				intensity_init = &cone_dist_init;
@@ -115,6 +121,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_init_step = &cone_dist_init_step;
 				intensity_function = &cone_dist_get_intensity;
 				intensity_spectrum = &cone_dist_get_spectrum;
+				intensity_wavelengths = &cone_dist_get_wavelengths;
+				intensity_spectrum_length = &cone_dist_get_spectrum_length;
 			} else if (!strcmp(set->value[i], "isotropic")) {
 				printf("Selecting cone model 'isotropic'...\n");
 				intensity_init = &isotropic_init;
@@ -123,6 +131,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_init_step = &isotropic_init_step;
 				intensity_function = &isotropic_intensity;
 				intensity_spectrum = &isotropic_get_spectrum;
+				intensity_wavelengths = &isotropic_get_wavelengths;
+				intensity_spectrum_length = &isotropic_get_spectrum_length;
 			} else if (!strcmp(set->value[i], "sphere")) {
 				printf("Selecting cone model 'sphere'...\n");
 				intensity_init = &sphere_init;
@@ -131,6 +141,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_init_step = &sphere_init_step;
 				intensity_function = &sphere_intensity;
 				intensity_spectrum = &sphere_get_spectrum;
+				intensity_wavelengths = &sphere_get_wavelengths;
+				intensity_spectrum_length = &sphere_get_spectrum_length;
 			} else {
 				fprintf(stderr, "Unrecognized cone type given in pi-file: %s\n", set->value[i]);
 				exit(-1);
@@ -162,6 +174,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 		} else if (!strcmp(set->setting[i], "radiation")) {
 			if (!strcmp(set->value[i], "bremsstrahlung"))
 				radiation_type = SYCAMERA_RADIATION_BREMSSTRAHLUNG;
+			else if (!strcmp(set->value[i], "bremsstrahlung_spectrum"))
+				radiation_type = SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM;
 			else if (!strcmp(set->value[i], "constant"))
 				radiation_type = SYCAMERA_RADIATION_CONSTANT;
 			else if (!strcmp(set->value[i], "synchrotron"))
@@ -481,6 +495,10 @@ void sycamera_output(equation *eq) {
 	
 	sycout_output_all(mpi_rank, nprocesses);
 }
+
+double *sycamera_get_spectrum(void) { return intensity_spectrum(); }
+double *sycamera_get_wavelengths(void) { return intensity_wavelengths(); }
+int sycamera_get_spectrum_length(void) { return intensity_spectrum_length(); }
 
 /* Debugging functions */
 void print_intersections(int tindex, double *x, double *y, double x0, double y0, double a, double b, double cosxi, double sinxi, long long int counter, double cms, step_data *sd, double xhit, double yhit, double ola, double cosphi) {

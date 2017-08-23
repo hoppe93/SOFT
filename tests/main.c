@@ -66,7 +66,9 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	if (!strcmp(argv[1], "hyperbola")) {
+	if (!strcmp(argv[1], "bsspec")) {
+		return test_bss();
+	} else if (!strcmp(argv[1], "hyperbola")) {
 		return test_hyp();
 	} else {
 		fprintf(stderr, "ERROR: Unrecognized test: '%s'.\n", argv[1]);

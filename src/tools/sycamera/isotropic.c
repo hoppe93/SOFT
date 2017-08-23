@@ -26,3 +26,6 @@ double *isotropic_get_wavelengths(void) {
 double *isotropic_get_spectrum(void) {
 	return NULL;
 }
+int isotropic_get_spectrum_length(void) {
+	return 0;
+}

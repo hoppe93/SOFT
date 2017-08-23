@@ -46,6 +46,7 @@ typedef struct {
 
 enum sycamera_radiation_type {
 	SYCAMERA_RADIATION_BREMSSTRAHLUNG,
+	SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM,
 	SYCAMERA_RADIATION_CONSTANT,
 	SYCAMERA_RADIATION_SYNCHROTRON,
 	SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM
@@ -129,7 +130,7 @@ void sphere_init_step(step_data*);
 double sphere_intensity(step_data*,vector*,vector*,vector*,vector*,vector*);
 double *sphere_get_wavelengths(void);
 double *sphere_get_spectrum(void);
-int *sphere_get_spectrum_length(void);
+int sphere_get_spectrum_length(void);
 
 /* Functions for spectrum weighting */
 void sycamera_spectrum_init(double, double, int);
@@ -138,6 +139,14 @@ double sycamera_spectrum_weight(step_data*, double, double);
 double *sycamera_spectrum_get_wavelengths(void);
 double *sycamera_spectrum_get(void);
 int sycamera_spectrum_length(void);
+
+void sycamera_bsspec_init(double, double, int);
+void sycamera_bsspec_init_run(void);
+double sycamera_bsspec_int(double, double, double, double);
+double *sycamera_bsspec_get_wavelengths(void);
+double *sycamera_bsspec_get_spectrum(void);
+int sycamera_bsspec_get_spectrum_length(void);
+void sycamera_bsspec_test(void);
 
 void sycamera_pcyl_init(double, double, int);
 void sycamera_pcyl_init_run(void);
@@ -155,6 +164,10 @@ void sycamera_pdist_init_run(void);
 void sycamera_pdist_init_particle(double);
 double sycamera_pdist_int(double, double, double, double, double, double, double, double, double, double, double);
 void sycamera_pdist_test(void);
+
+double *sycamera_get_spectrum(void);
+double *sycamera_get_wavelengths(void);
+int sycamera_get_spectrum_length(void);
 
 /* Output functions */
 //void sycamera_image_output(const char*, camera_image*, int);

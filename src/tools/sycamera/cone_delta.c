@@ -41,6 +41,16 @@ void cone_delta_init(
 			exit(-1);
 		}
 		sycamera_spectrum_init(lambdas[0], lambdas[1], spectrum_resolution);
+	} else if (radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
+		if (lambdas == NULL) {
+			fprintf(stderr, "ERROR: No spectral range set for the detector.\n");
+			exit(-1);
+		}
+		if (lambdas[0] >= lambdas[1]) {
+			fprintf(stderr, "ERROR: setting spectrum: The lower photon energy must be given first.\n");
+			exit(-1);
+		}
+		sycamera_bsspec_init(lambdas[0], lambdas[1], spectrum_resolution);
 	}
 
 	if (polt != SYCAMERA_POLARIZATION_BOTH) {
@@ -51,6 +61,8 @@ void cone_delta_init(
 void cone_delta_init_run(void) {
 	if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
 		sycamera_spectrum_init_run();
+	else if (cone_delta_radiation_type == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM)
+		sycamera_bsspec_init_run();
 }
 void cone_delta_init_particle(particle *p) {
 	cone_delta_charge = p->charge;
@@ -85,7 +97,8 @@ double cone_delta_get_intensity(
 
     		//totalP = gamma*(log(2*gamma) - 1./3.);
 			totalP *= fraction;
-			
+		} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
+			totalP = sycamera_bsspec_int(sd->ppar2, sd->pperp2, cone_delta_mass, fraction);
     	} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_CONSTANT) {
     		totalP = fraction;
     	} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON) {
@@ -650,16 +663,22 @@ double cone_delta_radiation_hits(
 double *cone_delta_get_wavelengths(void) {
 	if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
 		return sycamera_spectrum_get_wavelengths();
+	else if (cone_delta_radiation_type == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM)
+		return sycamera_bsspec_get_wavelengths();
 	else return NULL;
 }
 double *cone_delta_get_spectrum(void) {
 	if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
 		return sycamera_spectrum_get();
+	else if (cone_delta_radiation_type == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM)
+		return sycamera_bsspec_get_spectrum();
 	else return NULL;
 }
 int cone_delta_get_spectrum_length(void) {
 	if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
 		return sycamera_spectrum_length();
+	else if (cone_delta_radiation_type == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM)
+		return sycamera_bsspec_get_spectrum_length();
 	else return 0;
 }
 

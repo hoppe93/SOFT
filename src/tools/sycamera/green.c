@@ -200,7 +200,7 @@ void sycout_green_init_run(void) {
 			sycout_green_nrad  = ijk[0];
 			sycout_green_nvel1 = ijk[1];
 			sycout_green_nvel2 = ijk[2];
-			sycout_green_nwav  = sycamera_spectrum_length();
+			sycout_green_nwav  = sycamera_get_spectrum_length();
 
 			/* Compute size of Green's function and build list of factors */
 			size_t size = 1;
@@ -325,7 +325,7 @@ void sycout_green_step(struct sycout_data *data) {
 
 	/* Set value of Green's function */
 	if (sycout_green_haswav) {
-		double *spectrum = sycamera_spectrum_get();
+		double *spectrum = sycamera_get_spectrum();
 		/* If we have to weigh with the distribution function,
 		 * then any or all of rho, vel1 and vel2 are NOT part
 		 * of the Green's function. That implies that two threads
@@ -494,7 +494,7 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 			double wavelengths = 0;
 			sf->write_list(sf, "wavelengths", &wavelengths, 1);
 		} else {
-			v = sycamera_spectrum_get_wavelengths();
+			v = sycamera_get_wavelengths();
 			sf->write_list(sf, "wavelengths", v, sycout_green_nwav);
 		}
 

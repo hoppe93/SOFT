@@ -57,6 +57,7 @@ set(magnetic
 set(sycamera
 	#"${PROJECT_SOURCE_DIR}/src/tools/sycamera/ascii.c"
 	#"${PROJECT_SOURCE_DIR}/src/tools/sycamera/binary.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/bsspectrum.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/cone_delta.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/cone_dist.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/df_interp.c"
@@ -83,6 +84,7 @@ set(sycamera
 
 set(tests
 	"${PROJECT_SOURCE_DIR}/tests/main.c"
+	"${PROJECT_SOURCE_DIR}/tests/bremsspec.c"
 	"${PROJECT_SOURCE_DIR}/tests/hyperbola.c"
 )
 set(tools
