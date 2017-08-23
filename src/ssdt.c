@@ -67,6 +67,7 @@ void ssdt_close(sFILE *s) {
 			free(kl->keys[i].name);
 		}
 		free(kl->keys);
+		free(kl->filedata);
 		free(s->identifier);
 		s->identifier = NULL;
 	} else {
@@ -87,19 +88,7 @@ void ssdt_close(sFILE *s) {
  * Load the entire file
  */
 struct ssdt_keylist *_ssdt_load(FILE *f) {
-	char *ssdt_file;
 	size_t read;
-
-	fseek(f, 0, SEEK_END);
-	size_t l = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	ssdt_file = malloc(sizeof(char)*(l+1));
-	read = fread(ssdt_file, sizeof(char), l, f);
-
-	if (read != l) {
-		fprintf(stderr, "ERROR: Unable to load SDT file.\n");
-		return NULL;
-	}
 
 	/* Create a map of the file */
 	struct ssdt_keylist *kl;
@@ -107,48 +96,58 @@ struct ssdt_keylist *_ssdt_load(FILE *f) {
 	kl->keys = NULL;
 	kl->nkeys = 0;
 
+	fseek(f, 0, SEEK_END);
+	size_t l = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	kl->filedata = malloc(sizeof(char)*(l+1));
+	read = fread(kl->filedata, sizeof(char), l, f);
+
+	if (read != l) {
+		fprintf(stderr, "ERROR: Unable to load SDT file.\n");
+		return NULL;
+	}
+
 	size_t i = 0, j, m, n;
-	while (ssdt_file[i]) {
+	while (kl->filedata[i]) {
 		kl->keys = realloc(kl->keys, sizeof(ssdt_key)*(kl->nkeys+1));
 
 		/* Load m & n */
-		sscanf(ssdt_file+i, "%zu %zu", &m, &n);
+		sscanf(kl->filedata+i, "%zu %zu", &m, &n);
 		/* Skip m & n in the string */
-		while (ssdt_file[i]&& ssdt_file[i]!=' '&&ssdt_file[i]!='\t') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[1]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
-		while (ssdt_file[i]&&(ssdt_file[i]==' '||ssdt_file[i]=='\t')) i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[2]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
-		while (ssdt_file[i]&& ssdt_file[i]!=' '&&ssdt_file[i]!='\t') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[3]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
-		while (ssdt_file[i]&&(ssdt_file[i]==' '||ssdt_file[i]=='\t')) i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[4]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		while (kl->filedata[i]&& kl->filedata[i]!=' '&&kl->filedata[i]!='\t') i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[1]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		while (kl->filedata[i]&&(kl->filedata[i]==' '||kl->filedata[i]=='\t')) i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[2]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		while (kl->filedata[i]&& kl->filedata[i]!=' '&&kl->filedata[i]!='\t') i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[3]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		while (kl->filedata[i]&&(kl->filedata[i]==' '||kl->filedata[i]=='\t')) i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[4]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		kl->keys[kl->nkeys].m = m;
 		kl->keys[kl->nkeys].n = n;
 
 		/* Load name */
 		j = i;
-		while (ssdt_file[i] && ssdt_file[i]!='\n') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[5]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		while (kl->filedata[i] && kl->filedata[i]!='\n') i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[5]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
 		kl->keys[kl->nkeys].name = malloc(sizeof(char)*(i-j+1));
-		strncpy(kl->keys[kl->nkeys].name, ssdt_file+j, i-j);
+		strncpy(kl->keys[kl->nkeys].name, kl->filedata+j, i-j);
 		kl->keys[kl->nkeys].name[i-j] = 0;
 
 		/* Find location of data */
-		while (ssdt_file[i] && ssdt_file[i]!='\n') i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[6]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
-		while (ssdt_file[i] && (ssdt_file[i]=='\n' || ssdt_file[i]==' ' || ssdt_file[i]=='\t')) i++;
-		if (ssdt_file[i]==0) {fprintf(stderr, "ERROR[7]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
-		kl->keys[kl->nkeys].location = ssdt_file+i;
+		while (kl->filedata[i] && kl->filedata[i]!='\n') i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[6]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		while (kl->filedata[i] && (kl->filedata[i]=='\n' || kl->filedata[i]==' ' || kl->filedata[i]=='\t')) i++;
+		if (kl->filedata[i]==0) {fprintf(stderr, "ERROR[7]: Unexpected end-of-file at byte %zu.\n", i); return NULL;}
+		kl->keys[kl->nkeys].location = kl->filedata+i;
 
 		kl->nkeys++;
 
 		/* Seek to end of object or file */
-		while (ssdt_file[i]&&!(ssdt_file[i]=='\n'&&ssdt_file[i+1]=='\n')) i++;
-		if (ssdt_file[i] == 0) break;
-		else while (ssdt_file[i]=='\n') i++;
+		while (kl->filedata[i]&&!(kl->filedata[i]=='\n'&&kl->filedata[i+1]=='\n')) i++;
+		if (kl->filedata[i] == 0) break;
+		else while (kl->filedata[i]=='\n') i++;
 	}
 
-	free(ssdt_file);
 	return kl;
 }
 /**

@@ -169,7 +169,8 @@ void smat_write_array(sFILE *s, const char *name, double **arr, size_t rows, siz
 	t = mxGetPr(ma);
 	for (i = 0; i < rows; i++) {
 		for (j = 0; j < cols; j++) {
-			t[i*cols + j] = arr[i][j];
+			//t[i*cols + j] = arr[i][j];
+			t[j*rows+i] = arr[i][j];
 		}
 	}
 

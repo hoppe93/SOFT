@@ -12,6 +12,7 @@ typedef struct {
 struct ssdt_keylist {
 	size_t nkeys;
 	ssdt_key *keys;
+	char *filedata;		/* Contents of SDT file */
 };
 
 int ssdt_open(sFILE *, const char*, enum sfile_mode);
