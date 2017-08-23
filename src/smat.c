@@ -39,7 +39,7 @@ int smat_open(sFILE *s, const char *filename, enum sfile_mode mode) {
 			s->identifier = matOpen(filename, "u");
 			break;
 		case SFILE_MODE_WRITE:
-			s->identifier = matOpen(filename, "w");
+			s->identifier = matOpen(filename, "w7.3");
 			break;
 		default:
 			fprintf(stderr, "Unrecognized option for opening MATLAB file: %d.\n", mode);
