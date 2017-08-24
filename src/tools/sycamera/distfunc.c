@@ -59,7 +59,7 @@ void distfunc_load(const char *filename) {
 	distfunc_function->xi = *temp; free(temp);
 
 	temp = sf->get_doubles(sf, "p", dims);
-	if (distfunc_function->p == NULL) { fprintf(stderr, "ERROR: (distfunc): The distribution function does not contain a 'p' vector.\n"); exit(EXIT_FAILURE); }
+	if (temp == NULL) { fprintf(stderr, "ERROR: (distfunc): The distribution function does not contain a 'p' vector.\n"); exit(EXIT_FAILURE); }
 	distfunc_function->np   = dims[1];
 	distfunc_function->p = *temp; free(temp);
 
