@@ -38,7 +38,7 @@ void df_interp_init(distfunc *f) {
 	df_interp_f = f;
 
 	df_interp_rmin = f->rmin, df_interp_rmax = f->rmax;
-	df_interp_cosmin = f->costmin, df_interp_cosmax = f->costmax;
+	df_interp_cosmin = f->ximin, df_interp_cosmax = f->ximax;
 	df_interp_pmin = f->pmin, df_interp_pmax = f->pmax;
 
 	if (f->nr > 1) df_interp_dr = (f->rmax-f->rmin)/(f->nr-1);
@@ -48,24 +48,24 @@ void df_interp_init_run(void) {
 	df_interp_accelerators_p = (gsl_interp_accel**)malloc(sizeof(gsl_interp_accel*)*df_interp_f->nr);
 	df_interp_splines = (gsl_spline2d**)malloc(sizeof(gsl_spline*)*df_interp_f->nr);
 
-	int r;
+	size_t r;
 	for (r = 0; r < df_interp_f->nr; r++) {
 		df_interp_accelerators_t[r] = gsl_interp_accel_alloc();
 		df_interp_accelerators_p[r] = gsl_interp_accel_alloc();
-		df_interp_splines[r] = gsl_spline2d_alloc(gsl_interp2d_bicubic, df_interp_f->np, df_interp_f->ncostheta);
+		df_interp_splines[r] = gsl_spline2d_alloc(gsl_interp2d_bicubic, df_interp_f->np, df_interp_f->nxi);
 
-		gsl_spline2d_init(df_interp_splines[r], df_interp_f->p, df_interp_f->costheta, df_interp_f->value[r], df_interp_f->np, df_interp_f->ncostheta);
+		gsl_spline2d_init(df_interp_splines[r], df_interp_f->p, df_interp_f->xi, df_interp_f->value[r], df_interp_f->np, df_interp_f->nxi);
 	}
 }
 
-double df_interp_eval(double r, double costheta, double p) {
+double df_interp_eval(double r, double xi, double p) {
 	/* Check input */
 	if (r < df_interp_rmin || r > df_interp_rmax) {
 		fprintf(stderr, "FATAL: Particle located outside distribution function! r = %e, rmin = %e, rmax = %e\n", r, df_interp_rmin, df_interp_rmax);
 		exit(EXIT_FAILURE);
 	}
-	if (costheta < df_interp_cosmin || costheta > df_interp_cosmax) {
-		fprintf(stderr, "FATAL: Particle pitch angle is not within distribution function! cos(theta) = %e\n", costheta);
+	if (xi < df_interp_cosmin || xi > df_interp_cosmax) {
+		fprintf(stderr, "FATAL: Particle pitch angle is not within distribution function! cos(theta) = %e\n", xi);
 		exit(EXIT_FAILURE);
 	}
 	if (p < df_interp_pmin || p > df_interp_pmax) {
@@ -73,17 +73,17 @@ double df_interp_eval(double r, double costheta, double p) {
 		exit(EXIT_FAILURE);
 	}
 
-	/* Find closest matches for r and costheta */
+	/* Find closest matches for r and xi */
 	int ir = (int)(round((r - df_interp_f->rmin)/df_interp_dr));
 
-	if (ir >= df_interp_f->nr || ir < 0) {
+	if (ir >= (signed int)df_interp_f->nr || ir < 0) {
 		fprintf(stderr, "WARNING: Attempting to evaluate distribution function outside it's bounds! (r=%e)", r);
 		ir = 0;
 	}
 
-	double v = gsl_spline2d_eval(df_interp_splines[ir], p, costheta, df_interp_accelerators_t[ir], df_interp_accelerators_p[ir]);
-	//printf("p = %e, theta = %e, f = %e\n", p, acos(costheta), v);
-	//printf("p = %e, pitch = %e,  f = %e\n", p, acos(costheta), v);
+	double v = gsl_spline2d_eval(df_interp_splines[ir], p, xi, df_interp_accelerators_t[ir], df_interp_accelerators_p[ir]);
+	//printf("p = %e, theta = %e, f = %e\n", p, acos(xi), v);
+	//printf("p = %e, pitch = %e,  f = %e\n", p, acos(xi), v);
 	return fabs(v);
 }
 

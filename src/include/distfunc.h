@@ -10,9 +10,10 @@ typedef struct {
 	double rmin, rmax;	/* Smallest/largest value of radial coordinate */
 	double *p;			/* List of momentum */
 	double pmin, pmax;	/* Smallest/largest value of momentum */
-	double *costheta;	/* List of pitch angles */
-	double costmin, costmax;/* Minimum/maximum cosine of pitch angle */
-	int nr, np, ncostheta;/* Number of radial values, number of momenum values, number of pitch angle values */
+	double *xi;			/* List of (cosines of) pitch angles */
+	double ximin, ximax;/* Minimum/maximum (cosine of) pitch angle */
+	size_t nr, np, nxi; /* Number of radial values, number of momentum values, number of pitch angle values */
+	char *name, *desc;	/* Name and description of distribution function */
 } distfunc;
 
 #define DISTFUNC_BUFFER_SIZE 1024
