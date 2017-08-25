@@ -244,12 +244,9 @@ void sycout_green_init_run(void) {
 			}
 
 			/* Generate factors array (eval cumulative product) */
-			for (j = SYCOUT_GREEN_MAXDIMS-1; j >= 0; j--) {
-				printf("[%d] = %zu\n", j, sycout_green_factors[j]);
+			for (j = SYCOUT_GREEN_MAXDIMS-2; j >= 0; j--) {
 				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
 				else sycout_green_factors[j] *= sycout_green_factors[j+1];
-
-				printf("[%d] = %zu\n", j, sycout_green_factors[j]);
 			}
 
 			/* Print note about how much memory is required */
