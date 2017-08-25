@@ -126,53 +126,35 @@ void sycout_green_init(struct general_settings *settings) {
 		fprintf(stderr, "ERROR: (sycout green): The Green's function is 0-dimensional.\n");
 		exit(EXIT_FAILURE);
 	}
-	printf("Green's function format: ");
-	char *s, S[20];
-	int verified = 0;
-	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
-		if (i > 0) printf(" x ");
-		switch (sycout_green_format[i]) {
-			case SYCOUT_GREEN_RADIUS: printf("RADIUS"); break;
-			case SYCOUT_GREEN_SPECTRUM: printf("SPECTRUM"); break;
-			case SYCOUT_GREEN_IMAGEI:
-				printf("PIXELS-I");
-				goto VERIFY_PIXELS;
-			case SYCOUT_GREEN_IMAGEJ:
-				printf("PIXELS-J");
-VERIFY_PIXELS:
-				if (sycout_green_pixels > 0)
-					verified = 1;
-				if (sycout_green_subpixels == 0)
-					sycout_green_subpixels = sycout_green_pixels;
-				
-				if (sycout_green_suboffseti+sycout_green_subpixels <= sycout_green_pixels)
-					verified = 2;
-				if (sycout_green_suboffsetj+sycout_green_subpixels <= sycout_green_pixels)
-					verified = 3;
-				break;
-			case SYCOUT_GREEN_VEL1:
-				s = particles_param1_name();
-				strcpy(S, s);
-				for (j=0; S[j]; j++) S[j] = chrupr(S[j]);
-				printf("%s", S);
-				break;
-			case SYCOUT_GREEN_VEL2:
-				s = particles_param2_name();
-				strcpy(S, s);
-				for (j=0; S[j]; j++) S[j] = chrupr(S[j]);
-				printf("%s", S);
-				break;
-			default: break;
-		}
-	}
-	putc('\n', stdout);
 
-	switch (verified) {
-		case 0: fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels); goto EXIT;
-		case 1: fprintf(stderr, "ERROR: (sycout green): Subset image larger in i direction than actual image.\n"); goto EXIT;
-		case 2: fprintf(stderr, "ERROR: (sycout green): Subset image larger in j direction than actual image.\n");
-		EXIT:
-			exit(EXIT_FAILURE);
+	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
+		if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEI) {
+			if (sycout_green_pixels > 0) {
+				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
+				exit(EXIT_FAILURE);
+			}
+
+			if (sycout_green_subpixels == 0)
+				sycout_green_subpixels = sycout_green_pixels;
+
+			if (sycout_green_suboffseti+sycout_green_subpixels <= sycout_green_pixels) {
+				fprintf(stderr, "ERROR: (sycout green): Subset image larger in i direction than actual image.\n");
+				exit(EXIT_FAILURE);
+			}
+		} else if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEJ) {
+			if (sycout_green_pixels > 0) {
+				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
+				exit(EXIT_FAILURE);
+			}
+
+			if (sycout_green_subpixels == 0)
+				sycout_green_subpixels = sycout_green_pixels;
+			
+			if (sycout_green_suboffsetj+sycout_green_subpixels <= sycout_green_pixels) {
+				fprintf(stderr, "ERROR: (sycout green): Subset image larger in j direction than actual image.\n");
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 
 	/* Was the output format set? */
@@ -190,7 +172,7 @@ VERIFY_PIXELS:
 	}
 }
 void sycout_green_init_run(void) {
-	int ijk[3];
+	int ijk[3], j;
 	size_t i;
 
 	#pragma omp critical
@@ -202,12 +184,37 @@ void sycout_green_init_run(void) {
 			sycout_green_nvel2 = ijk[2];
 			sycout_green_nwav  = sycamera_get_spectrum_length();
 
+			printf("Green's function format: ");
+			char *s, S[20];
+			for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
+				if (i > 0) printf(" x ");
+				switch (sycout_green_format[i]) {
+					case SYCOUT_GREEN_RADIUS: printf("RADIUS"); break;
+					case SYCOUT_GREEN_SPECTRUM: printf("SPECTRUM"); break;
+					case SYCOUT_GREEN_IMAGEI: printf("PIXELS-I"); break;
+					case SYCOUT_GREEN_IMAGEJ: printf("PIXELS-J"); break;
+					case SYCOUT_GREEN_VEL1:
+						s = particles_param1_name();
+						strcpy(S, s);
+						for (j=0; S[j]; j++) S[j] = chrupr(S[j]);
+						printf("%s", S);
+						break;
+					case SYCOUT_GREEN_VEL2:
+						s = particles_param2_name();
+						strcpy(S, s);
+						for (j=0; S[j]; j++) S[j] = chrupr(S[j]);
+						printf("%s", S);
+						break;
+					default: break;
+				}
+			}
+			putc('\n', stdout);
+
 			/* Compute size of Green's function and build list of factors */
 			size_t size = 1;
 			for (i = 0; i < SYCOUT_GREEN_MAXDIMS; i++)
 				sycout_green_factors[i] = 1;
 
-			int j;
 			for (j = SYCOUT_GREEN_MAXDIMS-1; j >= 0; j--) {
 				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
 
@@ -244,12 +251,9 @@ void sycout_green_init_run(void) {
 			}
 
 			/* Generate factors array (eval cumulative product) */
-			for (j = SYCOUT_GREEN_MAXDIMS-1; j >= 0; j--) {
-				printf("[%d] = %zu\n", j, sycout_green_factors[j]);
+			for (j = SYCOUT_GREEN_MAXDIMS-2; j >= 0; j--) {
 				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
 				else sycout_green_factors[j] *= sycout_green_factors[j+1];
-
-				printf("[%d] = %zu\n", j, sycout_green_factors[j]);
 			}
 
 			/* Print note about how much memory is required */
