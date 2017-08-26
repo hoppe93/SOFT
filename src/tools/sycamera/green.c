@@ -291,13 +291,15 @@ void sycout_green_step(struct sycout_data *data) {
 		J = (size_t)(data->j*sycout_green_pixels),
 		index = 0, wavindex = 0;
 	
-	if (I < sycout_green_suboffseti || I >= sycout_green_subpixels+sycout_green_suboffseti)
-		return;
-	if (J < sycout_green_suboffsetj || J >= sycout_green_subpixels+sycout_green_suboffsetj)
-		return;
+	if (sycout_green_pixels > 0) {
+		if (I < sycout_green_suboffseti || I >= sycout_green_subpixels+sycout_green_suboffseti)
+			return;
+		if (J < sycout_green_suboffsetj || J >= sycout_green_subpixels+sycout_green_suboffsetj)
+			return;
 
-	I -= sycout_green_suboffseti;
-	J -= sycout_green_suboffsetj;
+		I -= sycout_green_suboffseti;
+		J -= sycout_green_suboffsetj;
+	}
 	
 	/* Compute index */
 	size_t i;
@@ -317,8 +319,6 @@ void sycout_green_step(struct sycout_data *data) {
 				break;
 		}
 	}
-
-	//printf("index = %zu,  r = %zu, i = %zu, j = %zu\n", index, sycout_green_irad, I, J);
 
 	/* Compute differential element */
 	double diffel = data->RdPhi * data->Jdtdrho;
