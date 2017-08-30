@@ -131,4 +131,4 @@ and similarly in Python
    The order in which the number of elements are given to ``reshape`` is very
    significant!
 
-The above examples apply only to the ``full`` kernel function.
+The above examples are for a function of type ``r12ij``.

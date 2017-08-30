@@ -333,7 +333,7 @@ void sycout_green_step(struct sycout_data *data) {
 		/* If we have to weigh with the distribution function,
 		 * then any or all of rho, vel1 and vel2 are NOT part
 		 * of the Green's function. That implies that two threads
-		 * can work on the same element of the GF at a time,
+		 * can't work on the same element of the GF at a time,
 		 * which requires 'omp critical' pragmas. */
 		if (sycout_green_weighWdf) {
 			#pragma omp critical
@@ -353,7 +353,7 @@ void sycout_green_step(struct sycout_data *data) {
 		/* If we have to weigh with the distribution function,
 		 * then any or all of rho, vel1 and vel2 are NOT part
 		 * of the Green's function. That implies that two threads
-		 * can work on the same element of the GF at a time,
+		 * can't work on the same element of the GF at a time,
 		 * which requires 'omp critical' pragmas. */
 		if (sycout_green_weighWdf) {
 			#pragma omp critical

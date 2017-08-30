@@ -6,55 +6,56 @@ as the cosine of the pitch angle :math:`\xi = \cos\theta_\mathrm{p}` in the oute
 
 File format
 -----------
-SOFT distribution functions are text files containing a set of matrices. Each matrix contains
-the momentum-space distribution function at a specific radius, with momentum :math:`p` along
-the :math:`x`-axis (i.e. varying with columns) and cosine of the pitch angle :math:`\xi`
-along the :math:`y`-axis (i.e. varying with rows). Each matrix corresponds to a particular
-major radius :math:`\rho`.
+Distribution functions are given to SOFT as Matlab MAT-files. SOFT expects the following
+variables to be present in the file:
 
-In the beginning of the file the phase-space grid is specified. The first three rows give the
-bounds and number of points in major radius :math:`\rho`, :math:`\xi` and momentum :math:`p`
-respectively. The next three rows are vectors containing all the grid points of phase-space,
-allowing the distribution function to be given on a non-uniform grid. Numbers are always
-separated by non-line-breaking white-space characters (i.e. tab or space).
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| Name            | Description                                                                                                          |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``description`` | String describing the distribution function.                                                                         |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``f``           | Actual distribution function. An :math:`n_r`-by-:math:`n_pn_{\xi}` matrix (see below).                               |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``name``        | String naming the distribution function.                                                                             |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``p``           | Vector containing points of momentum. Size 1-by-:math:`n_p`.                                                         |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``punits``      | String describing the units of ``p``. Either ``ev``, ``normalized`` or ``si``.                                       |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``r``           | Vector containing radial points. Size 1-by-:math:`n_r`.                                                              |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
+| ``xi``          | Vector containing (cosine of) pitch angle points. Size 1-by-:math:`n_{\xi}`.                                         |
++-----------------+----------------------------------------------------------------------------------------------------------------------+
 
-.. note:: Radial position and momentum are given in SI units for historic reasons.
+The most important variable in a SOFT distribution function file is ``f``, which is the actual
+distribution function. The variable is stored as a matrix with each row representing a momentum-space
+distribution function, i.e. with the radial coordinate changing along the row index.
 
-An example of a SOFT distribution function with numbers replaced by human-readable text is shown below. ::
+Each row of ``f`` corresponds to a momentum-space distribution function, shaped as one long
+:math:`n_p\times n_{\xi}` vector. The elements are ordered into :math:`n_{\xi}` groups of :math:`n_p`
+elements, so that the first :math:`n_p` elements of the vector corresponds to holding :math:`\xi`
+fixed and varying :math:`p`.
 
-  r0   rn    nr
-  xi0  xin   nxi
-  p0   pn    np
-  r0   r1   r2   r3   r4 ...
-  xi0  xi1  xi2  xi3  xi4 ...
-  p0   p1   p2   p3   p4 ...
-  f(r0,xi0,p0)   f(r0,xi0,p1)   f(r0,xi0,p2) ...
-  f(r0,xi1,p0)   f(r0,xi1,p1)   f(r0,xi1,p2) ...
-  f(r0,xi2,p0)   f(r0,xi2,p1)   f(r0,xi2,p2) ...
-  .
-  .
-  .
-  f(rn,xi0,p0)   f(rn,xi0,p1)   f(rn,xi0,p2) ...
-  f(rn,xi1,p0)   f(rn,xi1,p1)   f(rn,xi1,p2) ...
-  f(rn,xi2,p0)   f(rn,xi2,p1)   f(rn,xi2,p2) ...
-  .
-  .
-  .
+The ``name`` and ``description`` variables are fairly arbitrary and are only included to provide
+the user with basic information about the distribution function.
 
-With numbers, we instead have ::
+The ``p``, ``r`` and ``xi`` variables are vectors consisting of :math:`n_p`, :math:`n_r` and :math:`n_{\xi}`
+elements respectively. Together, the vectors specify the grid in momentum, radius and (cosine of)
+pitch angle on which the distribution function is defined.
 
-  6.8e-1     9.2e-1    200
-  0          1         5
-  5.36e-21   2.68e-20  5
-  0.68       0.68121   0.68241 ...
-  6.1232e-17 0.38268   0.70711 ...
-  5.36e-21   1.072e-20 1.608e-20 ...
-  0.0010962  0.0010962 0.0010962 ...
-  0.0010962  0.0010962 0.0010962 ...
-  0.0010962  0.0010962 0.0010962 ...
-  .
-  .
-  .
+To allow users to specify momentum coordinates in the units most convenient for them, and more
+importantly to prevent mix-ups of used units, the variable ``punits`` must be provided specifying
+the units used for the momentum variable. Allowed values are ``ev`` (for momentum in :math:`\text{eV}/mc`),
+``normalized`` (for :math:`p\equiv\gamma\beta`, where :math:`\gamma` is the electron's Lorentz factor and
+:math:`\beta` is the electron's speed normalized to the speed of light) and ``si`` (for SI units, i.e.
+:math:`\text{kg}\cdot\text{m/s}`).
+
+.. note::
+   Even though CODE is commonly used to generate distribution functions for SOFT, plain CODE
+   distribution functions are not directly compatible with SOFT. The distribution function
+   given as output by CODE consists of a set of Legendre polynomial coefficients used in evaluating the
+   distribution function :math:`f(p,\xi)`. SOFT on the other hand requires the function values
+   to be already evaluated.
 
 Helper tools for CODE/NORSE
 ---------------------------
