@@ -43,4 +43,6 @@ void df_interp_init_run(void);
 double df_interp_eval(double, double, double);
 void df_interp_error_handler(const char*, const char*, int, int);
 
+void distfunc_test(void);
+
 #endif/*_DISTFUNC_H*/

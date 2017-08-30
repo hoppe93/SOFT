@@ -110,72 +110,39 @@ void distfunc_load(const char *filename) {
 }
 
 void distfunc_test(void) {
-    distfunc_load("../../softdist/analytical/slim.func");
+	size_t i, pi, xii;
+    //distfunc_load("/mnt/HDD/runaway/mathias/softruns/softarticle/alexdist/alexdist.mat");
+    distfunc_load("/home/hoppe/Skrivbord/alexdist.mat");
 
-    /* Check r */
-    size_t i;
-    for (i = 0; i < distfunc_function->nr-1; i++) {
-        if (distfunc_function->r[i] >= distfunc_function->r[i+1]) {
-            printf("Error: Radius must be strictly increasing! Error found in index %zu of radius vector (%e >= %e).\n", i,
-                distfunc_function->r[i], distfunc_function->r[i+1]);
-            exit(-1);
-        }
-    }
+	pi = 4;
+	xii = 4;
 
-    for (i = 0; i < distfunc_function->nxi-1; i++) {
-        if (distfunc_function->xi[i] >= distfunc_function->xi[i+1]) {
-            printf("Error: cos(theta) must be strictly increasing! Error found in index %zu of cos(theta) vector (%e >= %e).\n", i,
-                distfunc_function->xi[i], distfunc_function->xi[i+1]);
-            exit(-1);
-        }
-    }
-    for (i = 0; i < distfunc_function->np-1; i++) {
-        if (distfunc_function->p[i] >= distfunc_function->p[i+1]) {
-            printf("Error: Momentum must be strictly increasing! Error found in index %zu of momentum vector (%e >= %e).\n", i,
-                distfunc_function->p[i], distfunc_function->p[i+1]);
-            exit(-1);
-        }
-    }
+	/* Print radial distribution */
+	printf("f(r) = ");
+	for (i = 0; i < distfunc_function->nr && i < 5; i++) {
+		printf("%e  ", distfunc_function->value[i][0]);
+	}
+	printf("\n");
 
-    /* Check values */
-	/*
-    int j,k;
-    for (i = 0; i < distfunc_function->nr; i++) {
-        for (j = 0; j < distfunc_function->nxi*distfunc_function->np; j++) {
-			for (k = 0; k < distfunc_function->np; k++) {
-				if (distfunc_function->value[i][j*distfunc_function->nxi+k] != 1.) {
-					printf("Warning: %d:%d:%d: Value does not equal 1\n", i, j, k);
-				}
-			}
-        }
-    }
-	*/
+	/* Print first momentum distribution */
+	printf("f(xi) = ");
+	for (i = xii; i < distfunc_function->nxi && i < xii+5; i++) {
+		printf("%e  ", distfunc_function->value[0][i+pi*distfunc_function->np]);
+	}
+	printf("\n");
 
-	i = distfunc_function->nr-1;
-	size_t j=distfunc_function->nxi-5;
-	size_t k=distfunc_function->np-3;
-	printf("f at index %zu:%zu:%zu = %e\n", i, j, k, distfunc_function->value[i][j*distfunc_function->np+k]);
+	/* Print first momentum distribution */
+	printf("f(p) = ");
+	for (i = pi; i < distfunc_function->np && i < pi+5; i++) {
+		printf("%e  ", distfunc_function->value[0][xii+i*distfunc_function->np]);
+	}
+	printf("\n");
 
-	double r = distfunc_function->r[i];
-	double c = distfunc_function->xi[j];
-	double p = distfunc_function->p[k];
-	double dc = distfunc_function->xi[j]-distfunc_function->xi[j-1];
-	double nc = c-dc;
-	printf("%zu:%zu:%zu <=> r = %e, cos(theta) = %e, p = %e\n", i, j, k, r, c, p);
+	df_interp_init_run();
 
-    df_interp_init_run();
-
-	printf("f(r,c,p) = %e\n", df_interp_eval(r, c, p));
-	printf("f(r,nc,p) = %e\n", df_interp_eval(r, nc, p));
-	printf("new c = %e\n", nc);
-
-    //printf("Distribution function passed all tests.\n");
-
-/*
-    double pmin=1., pmax=50., dp=2., p,
-        r = .72, xi = 0.99;
-    for (p = pmin; p <= pmax; p += dp) {
-        printf("(r = %e, p = %e, cos(theta) = %e) = %e\n", r, p, xi, distfunc_eval(r, xi, p));
-    }
-*/
+	double r = distfunc_function->r[0],
+		   xi = distfunc_function->xi[xii],
+		   p = distfunc_function->p[pi],
+		   v = df_interp_eval(r, xi, p);
+	printf("f(r = %.3f, p = %.3e, xi = %.3e) = %e\n", r, p, xi, v);
 }

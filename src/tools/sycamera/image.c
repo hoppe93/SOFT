@@ -108,7 +108,7 @@ void sycout_image_step(struct sycout_data *data) {
 	else if (sycout_image_brightness == SYCOUT_IMAGE_TYPE_HIST)
 		sycout_image_camim->canvas[j][i] += data->differential;
 	else if (sycout_image_brightness == SYCOUT_IMAGE_TYPE_BW)
-		sycout_image_camim->canvas[j][i] = data->differential;
+		sycout_image_camim->canvas[j][i] = 1;
 }
 
 /*

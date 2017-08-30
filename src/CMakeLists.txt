@@ -85,6 +85,7 @@ set(sycamera
 set(tests
 	"${PROJECT_SOURCE_DIR}/tests/main.c"
 	"${PROJECT_SOURCE_DIR}/tests/bremsspec.c"
+	"${PROJECT_SOURCE_DIR}/tests/distfunc.c"
 	"${PROJECT_SOURCE_DIR}/tests/hyperbola.c"
 )
 set(tools
