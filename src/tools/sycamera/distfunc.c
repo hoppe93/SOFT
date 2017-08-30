@@ -110,12 +110,19 @@ void distfunc_load(const char *filename) {
 }
 
 void distfunc_test(void) {
-	size_t i, pi, xii;
+	size_t i, j, pi, xii;
     //distfunc_load("/mnt/HDD/runaway/mathias/softruns/softarticle/alexdist/alexdist.mat");
     distfunc_load("/home/hoppe/Skrivbord/alexdist.mat");
 
-	pi = 4;
-	xii = 4;
+	pi = 17;
+	xii = 7;
+
+	/* Print p */
+	printf("p = [");
+	for (i = 0; i < distfunc_function->np && i < 5; i++) {
+		printf("%.4e  ", distfunc_function->p[i]);
+	}
+	printf("...  %.4e]\n", distfunc_function->pmax);
 
 	/* Print radial distribution */
 	printf("f(r) = ");
@@ -127,14 +134,14 @@ void distfunc_test(void) {
 	/* Print first momentum distribution */
 	printf("f(xi) = ");
 	for (i = xii; i < distfunc_function->nxi && i < xii+5; i++) {
-		printf("%e  ", distfunc_function->value[0][i+pi*distfunc_function->np]);
+		printf("%e  ", distfunc_function->value[0][pi+i*distfunc_function->np]);
 	}
 	printf("\n");
 
 	/* Print first momentum distribution */
 	printf("f(p) = ");
 	for (i = pi; i < distfunc_function->np && i < pi+5; i++) {
-		printf("%e  ", distfunc_function->value[0][xii+i*distfunc_function->np]);
+		printf("%e  ", distfunc_function->value[0][i+xii*distfunc_function->np]);
 	}
 	printf("\n");
 
@@ -145,4 +152,14 @@ void distfunc_test(void) {
 		   p = distfunc_function->p[pi],
 		   v = df_interp_eval(r, xi, p);
 	printf("f(r = %.3f, p = %.3e, xi = %.3e) = %e\n", r, p, xi, v);
+
+	/* Create part of matrix using interpolation */
+	for (j = xii; j < xii+4; j++) {
+		for (i = pi; i < pi+4; i++) {
+			xi = distfunc_function->xi[j];
+			p = distfunc_function->p[i];
+			printf("%.3e  ", df_interp_eval(r, xi, p));
+		}
+		printf("\n");
+	}
 }
