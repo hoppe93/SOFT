@@ -111,8 +111,8 @@ void distfunc_load(const char *filename) {
 
 void distfunc_test(void) {
 	size_t i, j, pi, xii;
-    //distfunc_load("/mnt/HDD/runaway/mathias/softruns/softarticle/alexdist/alexdist.mat");
-    distfunc_load("/home/hoppe/Skrivbord/alexdist.mat");
+    distfunc_load("/mnt/HDD/runaway/mathias/softruns/softarticle/alexdist/alexdist-rad.mat");
+    //distfunc_load("/home/hoppe/Skrivbord/alexdist-rad.mat");
 
 	pi = 17;
 	xii = 7;

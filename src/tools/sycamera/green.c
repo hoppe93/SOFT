@@ -129,7 +129,7 @@ void sycout_green_init(struct general_settings *settings) {
 
 	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
 		if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEI) {
-			if (sycout_green_pixels > 0) {
+			if (sycout_green_pixels < 0) {
 				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
 				exit(EXIT_FAILURE);
 			}
@@ -142,7 +142,7 @@ void sycout_green_init(struct general_settings *settings) {
 				exit(EXIT_FAILURE);
 			}
 		} else if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEJ) {
-			if (sycout_green_pixels > 0) {
+			if (sycout_green_pixels < 0) {
 				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
 				exit(EXIT_FAILURE);
 			}
