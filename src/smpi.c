@@ -1,6 +1,7 @@
 /* Various MPI helper functions */
 #include <mpi.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "smpi.h"
 
@@ -52,14 +53,24 @@ void smpi_wor(int tag) {
  * elements: Number of elements to read.
  * sender: MPI ID of process sending the data.
  */
-void smpi_receive_matrix(double *matrix, int elements, int sender, int tag) {
+void smpi_receive_matrix(double *matrix, size_t elements, int sender, int tag) {
 	int err;
+	int chunksize = INT_MAX, toread;
+	size_t read = 0;
 
-	if ((err=MPI_Recv(matrix, elements, MPI_DOUBLE, sender, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE))!=MPI_SUCCESS) {
-		fprintf(stderr, "MPI ERROR %d: Failed to receive matrix from process %d over MPI. Aborting...\n", err, sender);
-		MPI_Abort(MPI_COMM_WORLD, 1);
+	while (read < elements) {
+		if (elements-read > (size_t)chunksize) toread = chunksize;
+		else toread = elements-read;
+
+		if ((err=MPI_Recv(matrix+read, toread, MPI_DOUBLE, sender, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE))!=MPI_SUCCESS) {
+			fprintf(stderr, "MPI ERROR %d: Failed to receive matrix from process %d over MPI. Aborting...\n", err, sender);
+			MPI_Abort(MPI_COMM_WORLD, 1);
+		}
+
+		read += toread;
 	}
 }
+
 /**
  * Send a matrix (double array) to process
  * with index 'destination' over MPI.
@@ -72,13 +83,21 @@ void smpi_receive_matrix(double *matrix, int elements, int sender, int tag) {
  *   between these two.
  * destination: MPI rank of receing process.
  */
-void smpi_send_matrix(double *matrix, int elements, int destination, int tag) {
-	int rank, err;
+void smpi_send_matrix(double *matrix, size_t elements, int destination, int tag) {
+	int rank, err, chunksize = INT_MAX, tosend;
+	size_t sent = 0;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	if ((err=MPI_Send(matrix, elements, MPI_DOUBLE, destination, tag, MPI_COMM_WORLD))!=MPI_SUCCESS) {
-		fprintf(stderr, "MPI ERROR %d: Failed to send matrix over MPI to process %d. Aborting...\n", err, destination);
-		MPI_Abort(MPI_COMM_WORLD, 1);
+	while (sent < elements) {
+		if (elements-sent > (size_t)chunksize) tosend = chunksize;
+		else tosend = elements-sent;
+
+		if ((err=MPI_Send(matrix+sent, tosend, MPI_DOUBLE, destination, tag, MPI_COMM_WORLD))!=MPI_SUCCESS) {
+			fprintf(stderr, "MPI ERROR %d: Failed to send matrix over MPI to process %d. Aborting...\n", err, destination);
+			MPI_Abort(MPI_COMM_WORLD, 1);
+		}
+
+		sent += tosend;
 	}
 }
 

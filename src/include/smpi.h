@@ -5,7 +5,7 @@
 
 void smpi_sor(int);
 void smpi_wor(int);
-void smpi_receive_matrix(double*, int, int, int);
-void smpi_send_matrix(double*, int, int, int);
+void smpi_receive_matrix(double*, size_t, int, int);
+void smpi_send_matrix(double*, size_t, int, int);
 
 #endif/*_SMPI_H*/

@@ -129,7 +129,7 @@ void sycout_green_init(struct general_settings *settings) {
 
 	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
 		if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEI) {
-			if (sycout_green_pixels < 0) {
+			if (sycout_green_pixels == 0) {
 				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
 				exit(EXIT_FAILURE);
 			}
@@ -137,12 +137,12 @@ void sycout_green_init(struct general_settings *settings) {
 			if (sycout_green_subpixels == 0)
 				sycout_green_subpixels = sycout_green_pixels;
 
-			if (sycout_green_suboffseti+sycout_green_subpixels <= sycout_green_pixels) {
+			if (sycout_green_suboffseti+sycout_green_subpixels > sycout_green_pixels) {
 				fprintf(stderr, "ERROR: (sycout green): Subset image larger in i direction than actual image.\n");
 				exit(EXIT_FAILURE);
 			}
 		} else if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEJ) {
-			if (sycout_green_pixels < 0) {
+			if (sycout_green_pixels == 0) {
 				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
 				exit(EXIT_FAILURE);
 			}
@@ -150,7 +150,7 @@ void sycout_green_init(struct general_settings *settings) {
 			if (sycout_green_subpixels == 0)
 				sycout_green_subpixels = sycout_green_pixels;
 			
-			if (sycout_green_suboffsetj+sycout_green_subpixels <= sycout_green_pixels) {
+			if (sycout_green_suboffsetj+sycout_green_subpixels > sycout_green_pixels) {
 				fprintf(stderr, "ERROR: (sycout green): Subset image larger in j direction than actual image.\n");
 				exit(EXIT_FAILURE);
 			}
