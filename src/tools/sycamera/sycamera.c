@@ -42,6 +42,7 @@ double *sycamera_costor, *sycamera_sintor;	/* Arrays containing cos/sin of toroi
 double sycamera_lasti, sycamera_lastj,
 	   sycamera_lastlx, sycamera_lastly;
 double sycamera_particle_diffel;/* Particle differential element */
+double sycamera_zeff;			/* Effective plasma charge, used by bremsstrahlung components */
 
 vector *temps=NULL, *e1, *e2;
 const int NUMBER_OF_TEMPS=7;
@@ -85,6 +86,7 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	sycamera_has_distfunc = 0;
 
 	sycamera_polarization = SYCAMERA_POLARIZATION_BOTH;
+	sycamera_zeff = 1.0;
 
 	double *lambdas=NULL;
 	int spectrum_resolution=50, integral_resolution=10;
@@ -192,9 +194,11 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 			spectrum_resolution = atoi(set->value[i]);
 		} else if (!strcmp(set->setting[i], "toroidal_resolution")) {
 			toroidal_resolution = atoi(set->value[i]);
-		} else if (!strcmp(set->setting[i], "vision_angle"))
+		} else if (!strcmp(set->setting[i], "vision_angle")) {
 			visang = atof(set->value[i]);
-		else {
+		} else if (!strcmp(set->setting[i], "zeff")) {
+			sycamera_zeff = atof(set->value[i]);
+		} else {
 			fprintf(stderr, "Invalid sycamera setting: %s!\n", set->setting[i]);
 			exit(-1);
 		}

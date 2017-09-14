@@ -8,12 +8,15 @@
 #include "sycamera.h"
 
 double *sycamera_bsspec_photen, sycamera_bsspec_dk, *sycamera_bsspec_comp;
+double sycamera_bsspec_prefac;
 int sycamera_bsspec_lambda_resolution;
 
 #pragma omp threadprivate(sycamera_bsspec_comp)
 
 void sycamera_bsspec_init(double lambda0, double lambda1, int res) {
 	int i;
+	double r0, alpha;
+
 	sycamera_bsspec_photen = malloc(sizeof(double)*res);
 	sycamera_bsspec_lambda_resolution = res;
 	sycamera_bsspec_dk = (lambda1-lambda0) / (res-1);
@@ -23,6 +26,10 @@ void sycamera_bsspec_init(double lambda0, double lambda1, int res) {
 	}
 
 	sycamera_bsspec_dk = fabs(sycamera_bsspec_dk);
+
+	r0 = CHARGE*CHARGE/(ELECTRONMASS*LIGHTSPEED*LIGHTSPEED);
+	alpha = CHARGE*CHARGE / (2.0*EPS0*PLANCKH*LIGHTSPEED);
+	sycamera_bsspec_prefac = 2.0 * sycamera_zeff * r0*r0 * alpha;
 }
 
 void sycamera_bsspec_init_run(void) {
@@ -75,11 +82,10 @@ double sycamera_bsspec_int(double ppar2, double pperp2, double mass, double frac
 #define hc_mc2 ((PLANCKH*LIGHTSPEED) / (mc*LIGHTSPEED))
 
 	double p02 = (ppar2+pperp2)/(mc*mc), E0 = sqrt(1+p02), p0 = sqrt(p02), k,
-		eps0 = 2*log(E0+p0), sum=0, c;
+		eps0 = 2*log(E0+p0), sum=0, c, v;
 	
 	int i;
 	for (i = 0; i < sycamera_bsspec_lambda_resolution; i++) {
-		//k = hc_mc2 / sycamera_bsspec_lambdas[i];
 		k = sycamera_bsspec_photen[i];
 
 		if (k < E0-1) {
@@ -91,7 +97,9 @@ double sycamera_bsspec_int(double ppar2, double pperp2, double mass, double frac
 		}
 	}
 
-	return sum * sycamera_bsspec_dk;
+
+	v = p0 / (E0*mass);	/* Electron speed */
+	return sycamera_bsspec_prefac * sum * sycamera_bsspec_dk * v;
 }
 
 double *sycamera_bsspec_get_wavelengths(void) { return sycamera_bsspec_photen; }

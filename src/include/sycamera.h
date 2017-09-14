@@ -63,7 +63,7 @@ enum sycamera_polarization_type {
 
 /* Shared variables */
 extern vector *ddet, *e1, *e2, *Rdet;
-extern double rdet, visang;
+extern double rdet, visang, sycamera_zeff;
 extern enum sycamera_radiation_type radiation_type;
 
 /* Lookup tables (pcyl) */
