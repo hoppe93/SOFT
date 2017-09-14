@@ -6,6 +6,9 @@ There are a number of settings that can be specified in a ``pi`` file, and each 
 introduces its own set of options. In this section a complete list of all the options that can be
 set in a ``pi`` file are given.
 
+.. contents:: Contents
+   :local:
+
 Global options
 --------------
 
@@ -353,7 +356,13 @@ coupled to the ``sycamera`` tool of SOFT. Currently the following sycouts are av
 
 green
 ^^^^^
+The ``green`` sycout allows you to generate Green's functions for images, spectra or
+any kind of function you can imagine. Green's functions are sometimes also known as
+weight functions and are essentially mappings from a distribution function to a quantity
+such as an image, spectrum or combination thereof.
+
 *Instructions on how to use this sycout are available under :ref:`geomkern`.*
+
 .. option:: format
 
    | **Default value:** Auto-determined from output filename extension
@@ -416,4 +425,113 @@ green
    Specifies the number of pixels in each of the i and j directions of the subset image.
    Since the subset image must lie within the full image, ``suboffseti``+``subpixels`` and
    ``suboffsetj``+``subpixels`` must both be less than or equal to ``pixels``.
+
+image
+^^^^^
+The ``image`` sycout generates a camera image.
+
+.. option:: brightness
+
+   | **Default value:** ``intensity``
+   | **Example line:** ``brightness=histogram``
+   | **Allowed values:** ``bw``, ``histogram``, ``intensity``
+
+   Specifies how pixels should be colored. With ``bw`` (for black-and-white), pixels are
+   simply marked if they receive a contribution. Thus, if any radiation hits the pixel
+   during the run, the pixel will contain the value 1 at the end of the run and 0 otherwise.
+
+   The ``histogram`` option specifies that each hit in a pixel should increase the value
+   of the pixel by 1. The radiation intensity reaching the pixel is not considered.
+
+   The ``intensity`` option takes the emitted radiation intensity into account, including
+   spectral effects (if enabled through other options).
+
+.. option:: name
+
+   | **Default value:** None
+   | **Example line:** ``name=output-file.mat``
+   | **Allowed values:** Any string allowed by the underlying file system
+
+   Specifies the name of the file to which the output will be written. The output
+   is written through the SOFT file interface which means it will be either in
+   a HDF5 file, a Matlab MAT file or a SOFT SDT (Self-Descriptive Text) format.
+   The file format is determined based on the filename extension. For HDF5, use
+   either *.h5* or *.hdf5*, for Matlab MAT use *.mat*, and for SDT any other extension
+   (though *.sdt* is recommended).
+
+.. option:: pixels
+
+   | **Default value:** None
+   | **Example line:** ``pixels=300``
+   | **Allowed values:** Any positive integer
+
+   Sets the number of pixels in the image. Images are always square and have the same
+   number of pixels in the x (i) direction as in the y (j) direction.
+
+space3d
+^^^^^^^
+The ``space3d`` can be used to store 3D data about the points of space that contribute
+to an image. *Will be described in more detail in a separate section*
+
+.. option:: output
+
+   | **Default value:** None
+   | **Example line:** ``output=name-of-outputfile.mat``
+   | **Allowed values:** Any string allowed by the underlying file system
+
+   Name of the file to which output should be written. The ``space3d`` module
+   uses the SOFT file interface, meaning output can be written in either
+   HDF5, Matlab MAT or SOFT SDT (Self-Descriptive Text) format. The format
+   of the output file is determined based on the filename extension. For HDF5
+   use *.h5* or *.hdf5*, for Matlab MAT use *.mat*, and for SDT use any other
+   extension (though *.sdt* is recommended).
+
+.. option:: pixels
+
+   | **Default value:** None
+   | **Example line:** ``pixels=300``
+   | **Allowed values:** Any positive integer
+
+   When ``type=pixels``, sets the number of pixels in each direction of the
+   bounding box. A value of for example 100 means that there will be a total
+   of :math:`100\times 100\times 100 = 1\,000\,000` "pixels" in the box.
+
+.. option:: point0
+
+   | **Default value:** None
+   | **Example line:** ``point0=.40,-.75,.20``
+   | **Allowed values:** Any real number; any real number; any real number
+
+   Specifies one of the two defining edge points of the bounding box. 
+
+.. option:: point1
+
+   | **Default value:** None
+   | **Example line:** ``point1=.63,-.15,-.20``
+   | **Allowed values:** Any real number; any real number; any real number
+
+   Specifies one of the two defining edge points of the bounding box. 
+
+.. option:: type
+
+   | **Default value:** None
+   | **Example line:** ``type=pixels``
+   | **Allowed values:** ``pixels``, ``real``
+
+   Specifies the type of 3D object to store. ``pixels`` divides the
+   bounding box into a number of smaller boxes and collects the contribution
+   in each of those (the number of boxes is determined by the ``pixels`` option).
+   This 3D type is fixed in size and is represented as a simple 3D array.
+
+   The ``real`` type stores the real location of each particle that contributes
+   to the image. This 3D grows in size with the number of particles that hit
+   the detector, and is stored as a sparse matrix. It's usually very difficult
+   to determine the final size of this 3D type, but it gives much more detailed
+   data and can sometimes be the more space-efficient option.
+
+spectrometer
+^^^^^^^^^^^^
+
+topview
+^^^^^^^
 
