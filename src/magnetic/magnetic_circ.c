@@ -25,15 +25,32 @@ void magnetic_circ_init(struct general_settings *set) {
 	/* Loop over all settings */
 	int i;
 	mcpar = malloc(sizeof(struct magnetic_circ_params));
+	mcpar->B0 = 1.0;
+	mcpar->Rm = 1.0;
+	mcpar->r  = 0.5;
+	mcpar->q  = 1.0;
+
 	for (i = 0; i < set->n; i++) {
 		if (!strcmp(set->setting[i], "B0")) {
 			mcpar->B0 = atof(set->value[i]);
 		} else if (!strcmp(set->setting[i], "major_radius")) {
 			mcpar->Rm = atof(set->value[i]);
+			if (mcpar->Rm <= 0.0) {
+				fprintf(stderr, "ERROR: Major radius must be greater than zero.\n");
+				exit(EXIT_FAILURE);
+			}
 		} else if (!strcmp(set->setting[i], "minor_radius")) {
 			mcpar->r = atof(set->value[i]);
+			if (mcpar->r <= 0.0) {
+				fprintf(stderr, "ERROR: Minor radius must be greater than zero.\n");
+				exit(EXIT_FAILURE);
+			}
 		} else if (!strcmp(set->setting[i], "safety_factor")) {
 			mcpar->q = atof(set->value[i]);
+			if (mcpar->q <= 0.0) {
+				fprintf(stderr, "ERROR: Safety factor must be greater than zero.\n");
+				exit(EXIT_FAILURE);
+			}
 		} else {
 			fprintf(stderr, "Invalid magnetic field handler 'circular' setting: %s!", set->setting[i]);
 			exit(-1);

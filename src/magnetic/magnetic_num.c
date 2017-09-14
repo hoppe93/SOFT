@@ -47,11 +47,15 @@ void magnetic_num_init(struct general_settings *set) {
 			else if (!strcmp(set->value[i], "any"))
 				magnetic_num_wall = MAGFIELD_ANY;
 			else {
-				fprintf(stderr, "Unrecognized wall type specified for magnetic field: '%s'\n", set->setting[i]);
+				fprintf(stderr, "ERROR: Unrecognized wall type specified for magnetic field: '%s'\n", set->setting[i]);
 				exit(-1);
 			}
 		} else if (!strcmp(set->setting[i], "axis")) {
 			axis = atodpn(set->value[i], 2, NULL);
+			if (axis[0] <= 0.0) {
+				fprintf(stderr, "ERROR: The magnetic axis radial location must be greater than zero.\n");
+				exit(EXIT_FAILURE);
+			}
 		} else if (!strcmp(set->setting[i], "format")) {
 			if (!strcmp(set->value[i], "auto"))
 				fformat = FILETYPE_UNKNOWN;

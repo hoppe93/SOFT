@@ -153,5 +153,9 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-
+#def setup(sphinx):
+#    import sys, os
+#    sys.path.insert(0, os.path.abspath('./util'))
+#    from softdomain import softdomain
+#    sphinx.add_domain(softdomain)
 

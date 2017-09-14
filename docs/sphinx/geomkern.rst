@@ -1,3 +1,5 @@
+.. _geomkern:
+
 Geometric kernels
 ==============================
 The way SOFT is constructed makes it possible to rewrite the "SOFT equation"

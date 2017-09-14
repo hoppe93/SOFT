@@ -1,3 +1,5 @@
+.. _magnetic:
+
 Magnetic equilibria
 ===================
 There are currently two magnetic handler modules available for SOFT. The ``circular`` handler
