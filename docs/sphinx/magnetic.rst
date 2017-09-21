@@ -73,11 +73,11 @@ magnetic equilibrium files:
 +----------------+------------------+---------------------------------------------------------------+
 | Variable       | Type             | Description                                                   |
 +================+==================+===============================================================+
-| ``Br``         | m-by-n matrix    | Radial component of magnetic field.                           |
+| ``Br``         | m-by-n matrix    | Radial component of magnetic field (radius-by-z).             |
 +----------------+------------------+---------------------------------------------------------------+
-| ``Bphi``       | m-by-n matrix    | Toroidal component of magnetic field.                         |
+| ``Bphi``       | m-by-n matrix    | Toroidal component of magnetic field (radius-by-z).           |
 +----------------+------------------+---------------------------------------------------------------+
-| ``Bz``         | m-by-n matrix    | Vertical component of magnetic field.                         |
+| ``Bz``         | m-by-n matrix    | Vertical component of magnetic field (radius-by-z).           |
 +----------------+------------------+---------------------------------------------------------------+
 | ``desc``       | String           | A longer description of the equilibrium. Must be present, but |
 |                |                  | may be empty.                                                 |
@@ -87,7 +87,7 @@ magnetic equilibrium files:
 +----------------+------------------+---------------------------------------------------------------+
 | ``name``       | String           | Name of the equilibrium. Must be present, but may be empty.   |
 +----------------+------------------+---------------------------------------------------------------+
-| ``r``          | 1-by-n vector    | List radial points in which the components of the magnetic    |
+| ``r``          | 1-by-m vector    | List radial points in which the components of the magnetic    |
 |                |                  | are given.                                                    |
 +----------------+------------------+---------------------------------------------------------------+
 | ``separatrix`` | 2-by-many vector | List of contour points marking the separatrix in the          |
@@ -96,7 +96,7 @@ magnetic equilibrium files:
 | ``wall``       | 2-by-many vector | List of contour points marking the bounds of the device in    |
 |                |                  | the poloidal plane.                                           |
 +----------------+------------------+---------------------------------------------------------------+
-| ``z``          | 1-by-m vector    | List of vertical points in which the components of the        |
+| ``z``          | 1-by-n vector    | List of vertical points in which the components of the        |
 |                |                  | magnetic field are given.                                     |
 +----------------+------------------+---------------------------------------------------------------+
 
