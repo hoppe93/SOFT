@@ -48,9 +48,8 @@ vector *temps=NULL, *e1, *e2;
 const int NUMBER_OF_TEMPS=7;
 int sycamera_has_distfunc;		/* Whether or not a distribution function is available */
 enum sycamera_radiation_type radiation_type=SYCAMERA_RADIATION_SYNCHROTRON;
-enum sycamera_polarization_type sycamera_polarization=SYCAMERA_POLARIZATION_BOTH;
 
-void (*intensity_init)(enum sycamera_radiation_type, enum sycamera_polarization_type, double*, int, int)=NULL;
+void (*intensity_init)(enum sycamera_radiation_type, double*, int, int)=NULL;
 void (*intensity_init_run)(void)=NULL;
 void (*intensity_init_particle)(particle*)=NULL;
 void (*intensity_init_step)(step_data*)=NULL;
@@ -85,7 +84,6 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	visang = 0;
 	sycamera_has_distfunc = 0;
 
-	sycamera_polarization = SYCAMERA_POLARIZATION_BOTH;
 	sycamera_zeff = 1.0;
 
 	double *lambdas=NULL;
@@ -160,17 +158,6 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 		} else if (!strcmp(set->setting[i], "position")) {
 			Rdet->val = atodpn(set->value[i], 3, Rdet->val);
 			Rdet->n = 3;
-		} else if (!strcmp(set->setting[i], "polarization")) {
-			if (!strcmp(set->value[i], "parallel")) {
-				sycamera_polarization = SYCAMERA_POLARIZATION_PARALLEL;
-			} else if (!strcmp(set->value[i], "perpendicular")) {
-				sycamera_polarization = SYCAMERA_POLARIZATION_PERPENDICULAR;
-			} else if (!strcmp(set->value[i], "both")) {
-				sycamera_polarization = SYCAMERA_POLARIZATION_BOTH;
-			} else {
-				fprintf(stderr, "sycamera: Unrecognized option for option 'polarization': '%s'.\n", set->value[i]);
-				exit(-1);
-			}
 		} else if (!strcmp(set->setting[i], "product")) {
 			sycout_select(set->value[i], sycout_set, nsycout_settings);
 		} else if (!strcmp(set->setting[i], "radiation")) {
@@ -205,7 +192,7 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	}
 
 	/* Initialize cone handler */
-	(*intensity_init)(radiation_type, sycamera_polarization, lambdas, spectrum_resolution, integral_resolution);
+	(*intensity_init)(radiation_type, lambdas, spectrum_resolution, integral_resolution);
 
 	/* Compute tangent of half vision angle for future use */
 	if (visang <= 0 || visang >= PI) {

@@ -19,13 +19,23 @@ vector *ddet, *e1, *e2, *Rdet;
 double rdet;
 #endif
 
-enum sycamera_polarization_type cone_dist_polarization;
-int cone_dist_nint=3;
+enum sycamera_radiation_type cone_dist_radt;
+int cone_dist_nint=3, cone_dist_nwavelengths;
 double cone_dist_prefactor, cone_dist_preprefactor,
        cone_dist_charge, cone_dist_mass, cone_dist_speed, cone_dist_beta,
 	   cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3, cone_dist_costheta,
 	   cone_dist_sintheta, cone_dist_B, cone_dist_betapar2, cone_dist_betaperp2,
-	   cone_dist_gammapar2, cone_dist_betapar, cone_dist_betaperp;
+	   cone_dist_gammapar2, cone_dist_betapar, cone_dist_betaperp,
+	   /* The polarization has four components:
+		* [0] = Real component of A_{left-right}
+		* [1] = Imaginary component of A_{left-right}
+		* [2] = Real component of A_{up-down}
+		* [3] = Imaginary component A_{up-down}
+		*/
+	   *cone_dist_polarization, cone_dist_polcosa, cone_dist_polsina,
+	   *cone_dist_wavelengths, *cone_dist_spectrum;
+
+#define NPOLARIZATION_COMPONENTS 4
 
 double (*Ihat)(double,double,double)=NULL;
 
@@ -33,7 +43,8 @@ double (*Ihat)(double,double,double)=NULL;
     cone_dist_speed,cone_dist_costheta,cone_dist_sintheta,\
 	cone_dist_beta, cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3,\
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
-	cone_dist_betapar, cone_dist_betaperp)
+	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
+	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -41,29 +52,31 @@ double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 }
 
 void cone_dist_init(
-	enum sycamera_radiation_type radt, enum sycamera_polarization_type polt,
-	double *lambdas, int spectrum_resolution, int integral_resolution
+	enum sycamera_radiation_type radt,
+	double *wavelengths, int spectrum_resolution, int integral_resolution
 ) {
-	cone_dist_polarization = polt;
+	cone_dist_radt = radt;
 
     if (radt == SYCAMERA_RADIATION_SYNCHROTRON) {
 		Ihat = cone_dist_Ihat;
 	} else if (radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
 		Ihat = cone_dist_Ihat_spec;
 
-		if (lambdas == NULL) {
+		if (wavelengths == NULL) {
 			fprintf(stderr, "ERROR: No spectral range set for the camera.\n");
 			exit(-1);
 		}
-		if (lambdas[0] >= lambdas[1]) {
+		if (wavelengths[0] >= wavelengths[1]) {
 			fprintf(stderr, "ERROR: setting spectrum: The lower wavelength boundary must be given first.\n");
 			exit(-1);
 		}
 
-		double omega0 = 2.0*PI*LIGHTSPEED / lambdas[1];
-		double omega1 = 2.0*PI*LIGHTSPEED / lambdas[0];
+		double omega0 = 2.0*PI*LIGHTSPEED / wavelengths[1];
+		double omega1 = 2.0*PI*LIGHTSPEED / wavelengths[0];
 		printf("omega = [%e, %e]\n", omega0, omega1);
-		sycamera_pdist_init(omega0, omega1, polt);
+		sycamera_pdist_init(omega0, omega1, spectrum_resolution);
+
+		cone_dist_nwavelengths = spectrum_resolution;
 	/*
 	} else if (radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG) {
 		Ihat = cone_dist_brems_Ihat;
@@ -75,9 +88,12 @@ void cone_dist_init(
 	//Ihat = cone_dist_Ihat_benchmark;
 
 	cone_dist_nint = integral_resolution;
+	cone_dist_polarization = malloc(sizeof(double)*NPOLARIZATION_COMPONENTS);
 }
 void cone_dist_init_run(void) {
-	sycamera_pdist_init_run();
+	sycamera_pdist_init_run(cone_dist_polarization);
+
+	cone_dist_spectrum = malloc(sizeof(double)*cone_dist_nwavelengths);
 }
 
 /**
@@ -251,6 +267,7 @@ double cone_dist_Ihat(double sinmu, double cosmu, double sinmu2) {
 	p2f = sinmu2 * cone_dist_gammai2 * ki2;
 
 	/* Single out certain polarization? */
+	/*
 	switch (cone_dist_polarization) {
 		case SYCAMERA_POLARIZATION_PARALLEL: return factor * p1;
 		case SYCAMERA_POLARIZATION_PERPENDICULAR: return -factor * p2f * p2;
@@ -258,12 +275,15 @@ double cone_dist_Ihat(double sinmu, double cosmu, double sinmu2) {
 		default:
 			return factor * (p1 - p2f * p2);
 	}
+	*/
+	return factor * (p1 - p2f * p2);
 }
 double cone_dist_Ihat_spec(double sinmu, double cosmu, double sinmu2) {
 	return sycamera_pdist_int(
 		cone_dist_gammai2, cone_dist_gamma3, cone_dist_gammapar2,
 		cone_dist_beta, cone_dist_beta2, cone_dist_betapar2,
-		cone_dist_B, sinmu, cosmu, cone_dist_sintheta, cone_dist_costheta
+		cone_dist_B, sinmu, cosmu, cone_dist_sintheta, cone_dist_costheta,
+		cone_dist_polcosa, cone_dist_polsina
 	);
 }
 double cone_dist_brems_Ihat(double sinmu, double cosmu, double sinmu2) {
@@ -305,29 +325,42 @@ void cone_dist_get_angles(
  */
 double cone_dist_integrateY(
     double X, double dY,
-    vector *rcp, vector *vhat
+    vector *rcp, vector *vhat,
+	double factor	/* Numerical integration factor * geometric factor */
 ) {
     int i;
-    double Y, cosmu, sinmu, sinmu2, dY2, s;
+    double Y, cosmu, sinmu, sinmu2, dY2, s, *spectrum;
 
     dY2 = dY+dY;
 
     /* Simpson's rule */
     cone_dist_get_angles(X, -rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s = (*Ihat)(sinmu, cosmu, sinmu2);
+	spectrum = sycamera_pdist_get_spectrum();
+	if (spectrum != NULL)
+		cone_dist_add_spectrum(spectrum, factor);
 
     cone_dist_get_angles(X, +rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s += (*Ihat)(sinmu, cosmu, sinmu2);
+	spectrum = sycamera_pdist_get_spectrum();
+	if (spectrum != NULL)
+		cone_dist_add_spectrum(spectrum, factor);
 
     for (i = 1, Y = -rdet + dY; i < cone_dist_nint; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 4.0 * (*Ihat)(sinmu, cosmu, sinmu2);
+		spectrum = sycamera_pdist_get_spectrum();
+		if (spectrum != NULL)
+			cone_dist_add_spectrum(spectrum, 4.0*factor);
     }
     for (i = 2, Y = -rdet + dY2; i < cone_dist_nint-1; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 2.0 * (*Ihat)(sinmu, cosmu, sinmu2);
+		spectrum = sycamera_pdist_get_spectrum();
+		if (spectrum != NULL)
+			cone_dist_add_spectrum(spectrum, 2.0*factor);
     }
 
     return s;
@@ -344,7 +377,7 @@ double cone_dist_get_intensity(
     int i;
     double X, dX, dX2, s,
 		r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2],
-		weight = vdot3(rcp, ddet) / sqrt(r2);
+		weight = vdot3(rcp, ddet) / sqrt(r2), fac;
 
     if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
     //if (!cone_dist_can_radiation_hit2(sd, empty1, empty2))
@@ -352,32 +385,60 @@ double cone_dist_get_intensity(
 
     dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
     dX2 = dX+dX;
+	fac = dX*dX*weight / (9.0*r2);
+
+	cone_dist_reset_spectrum();
 
     /* Simpson's rule */
-    s = cone_dist_integrateY(-rdet, dX, rcp, vhat) +
-        cone_dist_integrateY(rdet, dX, rcp, vhat);
+    s = cone_dist_integrateY(-rdet, dX, rcp, vhat, fac) +
+        cone_dist_integrateY(rdet, dX, rcp, vhat, fac);
 
     for (i = 1, X = -rdet + dX; i < cone_dist_nint; i += 2, X += dX2) {
-        s += 4.0 * cone_dist_integrateY(X, dX, rcp, vhat);
+        s += 4.0 * cone_dist_integrateY(X, dX, rcp, vhat, 4.0*fac);
     }
     for (i = 2, X = -rdet + dX2; i < cone_dist_nint-1; i += 2, X += dX2) {
-        s += 2.0 * cone_dist_integrateY(X, dX, rcp, vhat);
+        s += 2.0 * cone_dist_integrateY(X, dX, rcp, vhat, 2.0*fac);
     }
 
     /* We multiply twice by the step and divide
        twice by 3 to compensate for not doing it
        in the Y integral. */
-    return s * dX * dX * weight / (9.0*r2);
+    return s * fac;
 }
 
+/**
+ * Spectrum acquisition routines
+ */
 double *cone_dist_get_wavelengths(void) {
-	return NULL;
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
+		return sycamera_pdist_get_wavelengths();
+	} else return NULL;
 }
 double *cone_dist_get_spectrum(void) {
-	return NULL;
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
+		//return sycamera_pdist_get_spectrum();
+		return cone_dist_spectrum;
+	} else return NULL;
 }
 int cone_dist_get_spectrum_length(void) {
-	return 0;
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
+		//return sycamera_pdist_get_spectrum_length();
+		return cone_dist_nwavelengths;
+	} else return 0;
+}
+double *cone_dist_get_polarization(void) {
+	return cone_dist_polarization;
+}
+
+void cone_dist_add_spectrum(double *spec, double factor) {
+	int i;
+	for (i = 0; i < cone_dist_nwavelengths; i++)
+		cone_dist_spectrum[i] += factor * spec[i];
+}
+void cone_dist_reset_spectrum(void) {
+	int i;
+	for (i = 0; i < cone_dist_nwavelengths; i++)
+		cone_dist_spectrum[i] = 0.0;
 }
 
 void cone_dist_test(void) {

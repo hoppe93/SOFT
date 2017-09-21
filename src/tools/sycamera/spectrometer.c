@@ -50,9 +50,11 @@ void sycout_spectrometer_init_run(void) {
 
 	for (i = 0; i < sycout_spectrometer_nlambdas; i++) {
 		sycout_spectrometer_lwavelengths[i] = lambdas[i];
-		sycout_spectrometer_lresult[i] = 0;
+		sycout_spectrometer_lresult[i] = 0.0;
 	}
 }
+
+void sycout_spectrometer_output(FILE *f, double *wavelengths, double *spectrum, int n);
 
 void sycout_spectrometer_init_particle(particle *p) {}
 void sycout_spectrometer_init_step(void) {}
@@ -65,7 +67,7 @@ void sycout_spectrometer_deinit_run(void) {
 			sycout_spectrometer_wavelengths = malloc(sizeof(double)*sycout_spectrometer_nlambdas);
 
 			for (i = 0; i < sycout_spectrometer_nlambdas; i++) {
-				sycout_spectrometer_result[i] = 0;
+				sycout_spectrometer_result[i] = 0.0;
 				sycout_spectrometer_wavelengths[i] = sycout_spectrometer_lwavelengths[i];
 			}
 		}
@@ -74,6 +76,19 @@ void sycout_spectrometer_deinit_run(void) {
 			sycout_spectrometer_result[i] += sycout_spectrometer_lresult[i];
 		}
 		sycout_spectrometer_counts += sycout_spectrometer_lcounts;
+
+		/* Print spectrum for this thread */
+		int tn = omp_get_thread_num();
+		FILE *f;
+		char sname[20];
+		sprintf(sname, "spectrum%d.csv", tn);
+		f = fopen(sname, "w");
+		if (!f) {
+			fprintf(stderr, "ERROR: Unable to create partial spectrum: %d\n", tn);
+		} else {
+			sycout_spectrometer_output(f, sycout_spectrometer_lwavelengths, sycout_spectrometer_lresult, sycout_spectrometer_nlambdas);
+			fclose(f);
+		}
 	}
 }
 
@@ -111,7 +126,6 @@ void sycout_spectrometer_combine(FILE *f, double *spectrum, int n, int mpi_rank,
 }
 void sycout_spectrometer_output(FILE *f, double *wavelengths, double *spectrum, int n) {
 	int i;
-	fprintf(f, "%lld\n", sycout_spectrometer_counts);
 	for (i = 0; i < n; i++) {
 		fprintf(f, "%.12e,%.12e\n", wavelengths[i], spectrum[i]);
 	}
@@ -119,7 +133,8 @@ void sycout_spectrometer_output(FILE *f, double *wavelengths, double *spectrum, 
 void sycout_spectrometer_normalize(double *spectrum, int n) {
 	int i;
 	for (i = 0; i < n; i++) {
-		spectrum[i] /= (double)sycout_spectrometer_counts;
+		if (sycout_spectrometer_counts > 0)
+			spectrum[i] /= (double)sycout_spectrometer_counts;
 	}
 }
 

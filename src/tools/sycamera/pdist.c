@@ -15,33 +15,59 @@
 double *sycamera_pdist_omegas, sycamera_pdist_dl,
 	sycamera_pdist_prefactor, sycamera_pdist_omega_B_factor,
 	sycamera_pdist_omega_low, sycamera_pdist_omega_up,
-	sycamera_pdist_ximax, sycamera_pdist_ximin;
-int sycamera_pdist_resolution, sycamera_pdist_haswarned;
-gsl_interp_accel *sycamera_pdist_acc1, *sycamera_pdist_acc2;
-gsl_spline *sycamera_pdist_spline1, *sycamera_pdist_spline2;
-enum sycamera_polarization_type sycamera_pdist_polt;
+	sycamera_pdist_ximax, sycamera_pdist_ximin, sycamera_pdist_polarization,
+	*sycamera_pdist_spectrum, *sycamera_pdist_wavelengths,
+	sycamera_pdist_spec_prefactor;
+int sycamera_pdist_spectrum_resolution, sycamera_pdist_haswarned;
+gsl_interp_accel *sycamera_pdist_acc1, *sycamera_pdist_acc2,
+				 *sycamera_pdist_spec_acc1, *sycamera_pdist_spec_acc2;
+gsl_spline *sycamera_pdist_spline1, *sycamera_pdist_spline2,
+		   * sycamera_pdist_spec_spline1, *sycamera_pdist_spec_spline2;
 
-#pragma omp threadprivate(sycamera_pdist_haswarned,sycamera_pdist_acc1,sycamera_pdist_acc2,sycamera_pdist_spline1,sycamera_pdist_spline2)
+#pragma omp threadprivate(sycamera_pdist_haswarned,sycamera_pdist_acc1,sycamera_pdist_acc2, \
+						  sycamera_pdist_spec_acc1,sycamera_pdist_spec_acc2,sycamera_pdist_spline1, \
+						  sycamera_pdist_spline2,sycamera_pdist_spec_spline1,sycamera_pdist_spec_spline2, \
+						  sycamera_pdist_polarization,sycamera_pdist_spectrum)
 
-void sycamera_pdist_init(double omega0, double omega1, enum sycamera_polarization_type polt) {
+void sycamera_pdist_init(double omega0, double omega1, int spectrum_resolution) {
 	sycamera_pdist_omega_low = omega0;
 	sycamera_pdist_omega_up = omega1;
-	sycamera_pdist_polt = polt;
+	sycamera_pdist_spectrum_resolution = spectrum_resolution;
+
+	/* Generate wavelengths */
+	double dlambda = 2*PI*LIGHTSPEED * (1.0/omega0 - 1.0/omega1) / ((double)spectrum_resolution);
+	sycamera_pdist_wavelengths = malloc(sizeof(double)*sycamera_pdist_spectrum_resolution);
+	sycamera_pdist_wavelengths[0] = 2*PI*LIGHTSPEED / omega1;
+
+	int i;
+	for (i = 1; i < sycamera_pdist_spectrum_resolution; i++) {
+		sycamera_pdist_wavelengths[i] = sycamera_pdist_wavelengths[i-1] + dlambda;
+	}
 }
-void sycamera_pdist_init_run(void) {
+void sycamera_pdist_init_run(double *polarization) {
 	sycamera_pdist_acc1 = gsl_interp_accel_alloc();
 	sycamera_pdist_acc2 = gsl_interp_accel_alloc();
+	sycamera_pdist_spec_acc1 = gsl_interp_accel_alloc();
+	sycamera_pdist_spec_acc2 = gsl_interp_accel_alloc();
+
 	sycamera_pdist_spline1 = gsl_spline_alloc(gsl_interp_cspline, sycamera_pdist_lookup_count);
 	sycamera_pdist_spline2 = gsl_spline_alloc(gsl_interp_cspline, sycamera_pdist_lookup_count);
+	sycamera_pdist_spec_spline1 = gsl_spline_alloc(gsl_interp_cspline, sycamera_pdist_spec_lookup_count);
+	sycamera_pdist_spec_spline2 = gsl_spline_alloc(gsl_interp_cspline, sycamera_pdist_spec_lookup_count);
 
 	gsl_spline_init(sycamera_pdist_spline1, sycamera_pdist_lookup_omega, sycamera_pdist_lookup_int1, sycamera_pdist_lookup_count);
 	gsl_spline_init(sycamera_pdist_spline2, sycamera_pdist_lookup_omega, sycamera_pdist_lookup_int2, sycamera_pdist_lookup_count);
+	gsl_spline_init(sycamera_pdist_spec_spline1, sycamera_pdist_spec_lookup_xi, sycamera_pdist_spec_lookup_f1, sycamera_pdist_spec_lookup_count);
+	gsl_spline_init(sycamera_pdist_spec_spline2, sycamera_pdist_spec_lookup_xi, sycamera_pdist_spec_lookup_f2, sycamera_pdist_spec_lookup_count);
 
 	sycamera_pdist_ximax = sycamera_pdist_lookup_omega[sycamera_pdist_lookup_count-1];
 	sycamera_pdist_ximin = sycamera_pdist_lookup_omega[0];
+
+	sycamera_pdist_spectrum = malloc(sizeof(double)*sycamera_pdist_spectrum_resolution);
 }
 void sycamera_pdist_init_particle(double mass) {
 	sycamera_pdist_prefactor = 9.0 * CHARGE*CHARGE*CHARGE*CHARGE / (256.0 * PI*PI*PI * EPS0 * LIGHTSPEED * mass*mass);
+	sycamera_pdist_spec_prefactor = 3.0 * CHARGE*CHARGE*CHARGE / (64.0 * PI*PI*PI * EPS0 * LIGHTSPEED * mass);
 	sycamera_pdist_omega_B_factor = CHARGE/mass;
 	//sycamera_pdist_omega_c_factor = 3.0 * CHARGE / (2.0*mass);
 }
@@ -49,11 +75,12 @@ void sycamera_pdist_init_particle(double mass) {
 double sycamera_pdist_int(
 	double gammai2, double gamma3, double gammapar2, double beta,
 	double beta2, double betapar2, double Bmag, double sinmu,
-	double cosmu, double sinp, double cosp
+	double cosmu, double sinp, double cosp, double polcosa, double polsina
 ) {
 	double
 		omegaB = sycamera_pdist_omega_B_factor*Bmag*sqrt(gammai2),
 		cospsi = cosmu*cosp + sinmu*sinp,
+		sinpsi2 = 1-cospsi*cospsi,
 		bcospsi = beta*cospsi,
 		bcospsi2 = bcospsi/2.0,
 		mcospsi = 1-bcospsi,
@@ -62,8 +89,12 @@ double sycamera_pdist_int(
 	
 	double pf = sycamera_pdist_prefactor * Bmag*Bmag * beta2 *
 		(1 - beta*cosp*cosmu) * gammai2 / (sqrt(gpar2mcospsi*bcospsi2)*mcospsi2);
+	double pf_spec = sycamera_pdist_spec_prefactor * Bmag * beta2 *
+		sqrt(gammai2) / (bcospsi*mcospsi);
+	double mf_spec = (bcospsi*sinpsi2)/mcospsi;
 
-	double cf = 2.0 / (3.0*omegaB) * sqrt(gpar2mcospsi*mcospsi2/bcospsi2);
+	double cf = 2.0 / (3.0*omegaB) * sqrt(gpar2mcospsi*mcospsi2/bcospsi2),
+		   xicf = cf * 2*PI*LIGHTSPEED;
 	double lower = sycamera_pdist_omega_low * cf;
 	double upper = sycamera_pdist_omega_up * cf;
 
@@ -78,8 +109,9 @@ double sycamera_pdist_int(
 		upper = sycamera_pdist_ximax;
 	
 	/* Compute integrals */
-	double I13l, I13u, I23l, I23u, I13, I23;
+	double I13l, I13u, I23l, I23u, I13, I23, K13, K23, xi;
 
+	/*
 	switch (sycamera_pdist_polt) {
 		case SYCAMERA_POLARIZATION_PARALLEL:
 			I23l = gsl_spline_eval(sycamera_pdist_spline2, lower, sycamera_pdist_acc2);
@@ -105,6 +137,39 @@ double sycamera_pdist_int(
 		
 			return pf * (I23 + bcospsi2/mcospsi * (1-cospsi*cospsi) * I13);
 	}
+	*/
+
+	/* Compute spectrum */
+	int i;
+	for (i = 0; i < sycamera_pdist_spectrum_resolution; i++) {
+		xi = xicf / sycamera_pdist_wavelengths[i];
+		K13 = gsl_spline_eval(sycamera_pdist_spec_spline1, xi, sycamera_pdist_spec_acc1);
+		K23 = gsl_spline_eval(sycamera_pdist_spec_spline2, xi, sycamera_pdist_spec_acc2);
+
+		sycamera_pdist_spectrum[i] = pf_spec * (K23 + mf_spec * K13);
+	}
+
+	I13l = gsl_spline_eval(sycamera_pdist_spline1, lower, sycamera_pdist_acc1);
+	I13u = gsl_spline_eval(sycamera_pdist_spline1, upper, sycamera_pdist_acc1);
+	I23l = gsl_spline_eval(sycamera_pdist_spline2, lower, sycamera_pdist_acc2);
+	I23u = gsl_spline_eval(sycamera_pdist_spline2, upper, sycamera_pdist_acc2);
+
+	//sycamera_pdist_polarization[0] = 
+
+	I13 = I13l - I13u;
+	I23 = I23l - I23u;
+
+	return pf * (I23 + bcospsi2/mcospsi * (1-cospsi*cospsi) * I13);
+}
+
+double *sycamera_pdist_get_wavelengths(void) {
+	return sycamera_pdist_wavelengths;
+}
+double *sycamera_pdist_get_spectrum(void) {
+	return sycamera_pdist_spectrum;
+}
+int sycamera_pdist_get_spectrum_length(void) {
+	return sycamera_pdist_spectrum_resolution;
 }
 
 void sycamera_pdist_test(void) {
@@ -123,8 +188,8 @@ void sycamera_pdist_test(void) {
 
 	FILE *f;
 
-	sycamera_pdist_init(omega0, omega1, SYCAMERA_POLARIZATION_BOTH);
-	sycamera_pdist_init_run();
+	sycamera_pdist_init(omega0, omega1, 100);
+	sycamera_pdist_init_run(NULL);
 	sycamera_pdist_init_particle(mass);
 
 	f = fopen("pdist.out", "w");
@@ -143,7 +208,7 @@ void sycamera_pdist_test(void) {
 
 		intensity = sycamera_pdist_int(
 			1/gamma2, gamma2*sqrt(gamma2), 1/(1-beta2*cos2p), sqrt(beta2), beta2, beta2*cos2p,
-			B, smu, cmu, sqrt(sin2p), sqrt(cos2p)
+			B, smu, cmu, sqrt(sin2p), sqrt(cos2p), 1., 0.
 		);
 
 		fprintf(f, "%.12e \t %.12e\n", mu, intensity);
