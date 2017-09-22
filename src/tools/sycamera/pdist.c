@@ -67,7 +67,7 @@ void sycamera_pdist_init_run(double *polarization) {
 }
 void sycamera_pdist_init_particle(double mass) {
 	sycamera_pdist_prefactor = 9.0 * CHARGE*CHARGE*CHARGE*CHARGE / (256.0 * PI*PI*PI * EPS0 * LIGHTSPEED * mass*mass);
-	sycamera_pdist_spec_prefactor = 3.0 * CHARGE*CHARGE*CHARGE / (128.0 * PI*PI*PI*PI * EPS0 * LIGHTSPEED*LIGHTSPEED * mass);
+	sycamera_pdist_spec_prefactor = CHARGE*CHARGE*CHARGE / (16.0 * PI * EPS0 * mass);
 	sycamera_pdist_omega_B_factor = CHARGE/mass;
 	//sycamera_pdist_omega_c_factor = 3.0 * CHARGE / (2.0*mass);
 }
@@ -89,11 +89,10 @@ double sycamera_pdist_int(
 	
 	double pf = sycamera_pdist_prefactor * Bmag*Bmag * beta2 *
 		(1 - beta*cosp*cosmu) * gammai2 / (sqrt(gpar2mcospsi*bcospsi2)*mcospsi2);
-	double pf_spec = sycamera_pdist_spec_prefactor * Bmag * beta2 *
-		sqrt(gammai2) / (bcospsi*mcospsi);
+	double pf_spec = sycamera_pdist_spec_prefactor * Bmag * beta2 / (bcospsi*mcospsi);
 	double mf_spec = (bcospsi*sinpsi2)/mcospsi;
 
-	double cf = 2.0 / (3.0*omegaB) * sqrt(gpar2mcospsi*mcospsi2/bcospsi2),
+	double cf = (2.0/3.0)/omegaB * sqrt(gpar2mcospsi*mcospsi2/bcospsi2),
 		   xicf = cf * 2*PI*LIGHTSPEED;
 	double lower = sycamera_pdist_omega_low * cf;
 	double upper = sycamera_pdist_omega_up * cf;
@@ -109,7 +108,7 @@ double sycamera_pdist_int(
 		upper = sycamera_pdist_ximax;
 	
 	/* Compute integrals */
-	double I13l, I13u, I23l, I23u, I13, I23, K13, K23, xi, lambda;
+	double I13l, I13u, I23l, I23u, I13, I23, xi2K13, xi2K23, xi, lambda;
 
 	/*
 	switch (sycamera_pdist_polt) {
@@ -144,10 +143,10 @@ double sycamera_pdist_int(
 	for (i = 0; i < sycamera_pdist_spectrum_resolution; i++) {
 		lambda = sycamera_pdist_wavelengths[i];
 		xi = xicf / lambda;
-		K13 = gsl_spline_eval(sycamera_pdist_spec_spline1, xi, sycamera_pdist_spec_acc1);
-		K23 = gsl_spline_eval(sycamera_pdist_spec_spline2, xi, sycamera_pdist_spec_acc2);
+		xi2K13 = gsl_spline_eval(sycamera_pdist_spec_spline1, xi, sycamera_pdist_spec_acc1);
+		xi2K23 = gsl_spline_eval(sycamera_pdist_spec_spline2, xi, sycamera_pdist_spec_acc2);
 
-		sycamera_pdist_spectrum[i] = pf_spec * lambda*lambda * (K23 + mf_spec * K13);
+		sycamera_pdist_spectrum[i] = pf_spec / (lambda*lambda) * (xi2K23 + mf_spec * xi2K13);
 	}
 
 	I13l = gsl_spline_eval(sycamera_pdist_spline1, lower, sycamera_pdist_acc1);

@@ -76,19 +76,6 @@ void sycout_spectrometer_deinit_run(void) {
 			sycout_spectrometer_result[i] += sycout_spectrometer_lresult[i];
 		}
 		sycout_spectrometer_counts += sycout_spectrometer_lcounts;
-
-		/* Print spectrum for this thread */
-		int tn = omp_get_thread_num();
-		FILE *f;
-		char sname[20];
-		sprintf(sname, "spectrum%d.csv", tn);
-		f = fopen(sname, "w");
-		if (!f) {
-			fprintf(stderr, "ERROR: Unable to create partial spectrum: %d\n", tn);
-		} else {
-			sycout_spectrometer_output(f, sycout_spectrometer_lwavelengths, sycout_spectrometer_lresult, sycout_spectrometer_nlambdas);
-			fclose(f);
-		}
 	}
 }
 
