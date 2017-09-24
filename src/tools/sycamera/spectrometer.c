@@ -54,8 +54,6 @@ void sycout_spectrometer_init_run(void) {
 	}
 }
 
-void sycout_spectrometer_output(FILE *f, double *wavelengths, double *spectrum, int n);
-
 void sycout_spectrometer_init_particle(particle *p) {}
 void sycout_spectrometer_init_step(void) {}
 void sycout_spectrometer_deinit_run(void) {
@@ -113,6 +111,7 @@ void sycout_spectrometer_combine(FILE *f, double *spectrum, int n, int mpi_rank,
 }
 void sycout_spectrometer_output(FILE *f, double *wavelengths, double *spectrum, int n) {
 	int i;
+	fprintf(f, "%lld\n", sycout_spectrometer_counts);
 	for (i = 0; i < n; i++) {
 		fprintf(f, "%.12e,%.12e\n", wavelengths[i], spectrum[i]);
 	}

@@ -57,6 +57,8 @@ double (*intensity_function)(step_data*, vector*, vector*, vector*, vector*, vec
 double *(*intensity_spectrum)(void)=NULL;
 double *(*intensity_wavelengths)(void)=NULL;
 int (*intensity_spectrum_length)(void)=NULL;
+double *(*intensity_polarization)(void)=NULL;
+double **(*intensity_polarization_spectrum)(void)=NULL;
 
 #pragma omp threadprivate(sol1,sol2,temps,lasttime,sycamera_distfunc_weight,sycamera_lasti,sycamera_lastj,sycamera_lastlx,sycamera_lastly,sycamera_particle_diffel)
 
@@ -96,6 +98,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	intensity_spectrum = &cone_delta_get_spectrum;
 	intensity_wavelengths = &cone_delta_get_wavelengths;
 	intensity_spectrum_length = &cone_delta_get_spectrum_length;
+	intensity_polarization = NULL;
+	intensity_polarization_spectrum = NULL;
 
 	/* Loop over all settings */
 	int i;
@@ -113,6 +117,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &cone_delta_get_spectrum;
 				intensity_wavelengths = &cone_delta_get_wavelengths;
 				intensity_spectrum_length = &cone_delta_get_spectrum_length;
+				intensity_polarization = NULL;
+				intensity_polarization_spectrum = NULL;
 			} else if (!strcmp(set->value[i], "dist")) {
 				printf("Selecting cone model 'dist'...\n");
 				intensity_init = &cone_dist_init;
@@ -123,6 +129,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &cone_dist_get_spectrum;
 				intensity_wavelengths = &cone_dist_get_wavelengths;
 				intensity_spectrum_length = &cone_dist_get_spectrum_length;
+				intensity_polarization = &cone_dist_get_polarization;
+				intensity_polarization_spectrum = &cone_dist_get_polarization_spectrum;
 			} else if (!strcmp(set->value[i], "isotropic")) {
 				printf("Selecting cone model 'isotropic'...\n");
 				intensity_init = &isotropic_init;
@@ -133,6 +141,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &isotropic_get_spectrum;
 				intensity_wavelengths = &isotropic_get_wavelengths;
 				intensity_spectrum_length = &isotropic_get_spectrum_length;
+				intensity_polarization = NULL;
+				intensity_polarization_spectrum = NULL;
 			} else if (!strcmp(set->value[i], "sphere")) {
 				printf("Selecting cone model 'sphere'...\n");
 				intensity_init = &sphere_init;
@@ -143,6 +153,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &sphere_get_spectrum;
 				intensity_wavelengths = &sphere_get_wavelengths;
 				intensity_spectrum_length = &sphere_get_spectrum_length;
+				intensity_polarization = NULL;
+				intensity_polarization_spectrum = NULL;
 			} else {
 				fprintf(stderr, "Unrecognized cone type given in pi-file: %s\n", set->value[i]);
 				exit(-1);
@@ -490,6 +502,16 @@ void sycamera_output(equation *eq) {
 double *sycamera_get_spectrum(void) { return intensity_spectrum(); }
 double *sycamera_get_wavelengths(void) { return intensity_wavelengths(); }
 int sycamera_get_spectrum_length(void) { return intensity_spectrum_length(); }
+double *sycamera_get_polarization(void) {
+	if (intensity_polarization != NULL)
+		return intensity_polarization();
+	else return NULL;
+}
+double **sycamera_get_polarization_spectrum(void) {
+	if (intensity_polarization_spectrum != NULL)
+		return intensity_polarization_spectrum();
+	else return NULL;
+}
 
 /* Debugging functions */
 void print_intersections(int tindex, double *x, double *y, double x0, double y0, double a, double b, double cosxi, double sinxi, long long int counter, double cms, step_data *sd, double xhit, double yhit, double ola, double cosphi) {

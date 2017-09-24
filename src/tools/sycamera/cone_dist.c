@@ -33,7 +33,9 @@ double cone_dist_prefactor, cone_dist_preprefactor,
 		* [3] = Imaginary component A_{up-down}
 		*/
 	   *cone_dist_polarization, cone_dist_polcosa, cone_dist_polsina,
-	   *cone_dist_wavelengths, *cone_dist_spectrum;
+	   *cone_dist_wavelengths, *cone_dist_spectrum,
+	   *cone_dist_polarization, **cone_dist_polarization_spectrum,
+	   cone_dist_dwavelength;
 
 #define NPOLARIZATION_COMPONENTS 4
 
@@ -44,7 +46,8 @@ double (*Ihat)(double,double,double)=NULL;
 	cone_dist_beta, cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3,\
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
 	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
-	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum)
+	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum, \
+	cone_dist_polarization, cone_dist_polarization_spectrum)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -77,6 +80,7 @@ void cone_dist_init(
 		sycamera_pdist_init(omega0, omega1, spectrum_resolution);
 
 		cone_dist_nwavelengths = spectrum_resolution;
+		cone_dist_dwavelength = fabs((wavelengths[1]-wavelengths[0])/spectrum_resolution);
 	/*
 	} else if (radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG) {
 		Ihat = cone_dist_brems_Ihat;
@@ -94,6 +98,12 @@ void cone_dist_init_run(void) {
 	sycamera_pdist_init_run(cone_dist_polarization);
 
 	cone_dist_spectrum = malloc(sizeof(double)*cone_dist_nwavelengths);
+	cone_dist_polarization = malloc(sizeof(double)*4);
+	cone_dist_polarization_spectrum = malloc(sizeof(double*)*4);
+	cone_dist_polarization_spectrum[0] = malloc(sizeof(double)*cone_dist_nwavelengths);
+	cone_dist_polarization_spectrum[1] = malloc(sizeof(double)*cone_dist_nwavelengths);
+	cone_dist_polarization_spectrum[2] = malloc(sizeof(double)*cone_dist_nwavelengths);
+	cone_dist_polarization_spectrum[3] = malloc(sizeof(double)*cone_dist_nwavelengths);
 }
 
 /**
@@ -329,38 +339,31 @@ double cone_dist_integrateY(
 	double factor	/* Numerical integration factor * geometric factor */
 ) {
     int i;
-    double Y, cosmu, sinmu, sinmu2, dY2, s, *spectrum;
+    double Y, cosmu, sinmu, sinmu2, dY2, s;
 
+	factor *= cone_dist_dwavelength;
     dY2 = dY+dY;
 
     /* Simpson's rule */
     cone_dist_get_angles(X, -rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s = (*Ihat)(sinmu, cosmu, sinmu2);
-	spectrum = sycamera_pdist_get_spectrum();
-	if (spectrum != NULL)
-		cone_dist_add_spectrum(spectrum, factor);
+	cone_dist_add_spectrum_and_polarization(factor);
 
     cone_dist_get_angles(X, +rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s += (*Ihat)(sinmu, cosmu, sinmu2);
-	spectrum = sycamera_pdist_get_spectrum();
-	if (spectrum != NULL)
-		cone_dist_add_spectrum(spectrum, factor);
+	cone_dist_add_spectrum_and_polarization(factor);
 
     for (i = 1, Y = -rdet + dY; i < cone_dist_nint; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 4.0 * (*Ihat)(sinmu, cosmu, sinmu2);
-		spectrum = sycamera_pdist_get_spectrum();
-		if (spectrum != NULL)
-			cone_dist_add_spectrum(spectrum, 4.0*factor);
+		cone_dist_add_spectrum_and_polarization(factor);
     }
     for (i = 2, Y = -rdet + dY2; i < cone_dist_nint-1; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 2.0 * (*Ihat)(sinmu, cosmu, sinmu2);
-		spectrum = sycamera_pdist_get_spectrum();
-		if (spectrum != NULL)
-			cone_dist_add_spectrum(spectrum, 2.0*factor);
+		cone_dist_add_spectrum_and_polarization(factor);
     }
 
     return s;
@@ -407,7 +410,7 @@ double cone_dist_get_intensity(
 }
 
 /**
- * Spectrum acquisition routines
+ * Spectrum and polarization acquisition routines
  */
 double *cone_dist_get_wavelengths(void) {
 	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
@@ -420,25 +423,78 @@ double *cone_dist_get_spectrum(void) {
 		return cone_dist_spectrum;
 	} else return NULL;
 }
+double *cone_dist_get_polarization(void) {
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
+		return cone_dist_polarization;
+	} else return NULL;
+}
+double **cone_dist_get_polarization_spectrum(void) {
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
+		return cone_dist_polarization_spectrum;
+	} else return NULL;
+}
 int cone_dist_get_spectrum_length(void) {
 	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
 		//return sycamera_pdist_get_spectrum_length();
 		return cone_dist_nwavelengths;
 	} else return 0;
 }
-double *cone_dist_get_polarization(void) {
-	return cone_dist_polarization;
-}
 
+/**
+ * Spectrum and polarization addition/resets.
+ */
+void cone_dist_add_spectrum_and_polarization(double factor) {
+	double *spectrum, *polarization, **polspec;
+	spectrum = sycamera_pdist_get_spectrum();
+	polarization = sycamera_pdist_get_polarization();
+	polspec = sycamera_pdist_get_polarization_spectrum();
+
+	if (spectrum == NULL) return;
+
+	cone_dist_add_spectrum(spectrum, factor);
+	cone_dist_add_polarization(polarization, factor);
+	cone_dist_add_polarization_spectrum(polspec, factor);
+}
 void cone_dist_add_spectrum(double *spec, double factor) {
 	int i;
 	for (i = 0; i < cone_dist_nwavelengths; i++)
 		cone_dist_spectrum[i] += factor * spec[i];
 }
+void cone_dist_add_polarization(double *polarization, double factor) {
+	cone_dist_polarization[0] += polarization[0] * factor;
+	cone_dist_polarization[1] += polarization[1] * factor;
+	cone_dist_polarization[2] += polarization[2] * factor;
+	cone_dist_polarization[3] += polarization[3] * factor;
+}
+void cone_dist_add_polarization_spectrum(double **spectrum, double factor) {
+	int i;
+	for (i = 0; i < cone_dist_nwavelengths; i++) {
+		cone_dist_polarization_spectrum[0][i] += spectrum[0][i] * factor;
+		cone_dist_polarization_spectrum[1][i] += spectrum[1][i] * factor;
+		cone_dist_polarization_spectrum[2][i] += spectrum[2][i] * factor;
+		cone_dist_polarization_spectrum[3][i] += spectrum[3][i] * factor;
+	}
+}
+
 void cone_dist_reset_spectrum(void) {
 	int i;
 	for (i = 0; i < cone_dist_nwavelengths; i++)
 		cone_dist_spectrum[i] = 0.0;
+}
+void cone_dist_reset_polarization(void) {
+	cone_dist_polarization[0] = 0.0;
+	cone_dist_polarization[1] = 0.0;
+	cone_dist_polarization[2] = 0.0;
+	cone_dist_polarization[3] = 0.0;
+}
+void cone_dist_reset_polarization_spectrum(void) {
+	int i;
+	for (i = 0; i < cone_dist_nwavelengths; i++) {
+		cone_dist_polarization_spectrum[0][i] = 0.0;
+		cone_dist_polarization_spectrum[1][i] = 0.0;
+		cone_dist_polarization_spectrum[2][i] = 0.0;
+		cone_dist_polarization_spectrum[3][i] = 0.0;
+	}
 }
 
 void cone_dist_test(void) {

@@ -6,7 +6,7 @@
 #include "sycout.h"
 #include "util.h"
 
-const int NUMBER_OF_SYCOUTS=5;
+const int NUMBER_OF_SYCOUTS=6;
 sycout_type *all_sycouts=NULL;
 int *sycout_selected=NULL, sycout_nselected=0;
 
@@ -53,15 +53,13 @@ void sycout_init_handler(void) {
     all_sycouts[4].step = sycout_green_step;
     all_sycouts[4].write = sycout_green_write;
 
-/*
-    all_sycouts[5].name = setname("map");
-    all_sycouts[5].deinit_run = sycout_map_deinit_run;
-    all_sycouts[5].init = sycout_map_init;
-    all_sycouts[5].init_run = sycout_map_init_run;
-    all_sycouts[5].init_particle = sycout_map_init_particle;
-    all_sycouts[5].step = sycout_map_step;
-    all_sycouts[5].write = sycout_map_write;
-*/
+    all_sycouts[5].name = setname("polimage");
+    all_sycouts[5].deinit_run = sycout_polimage_deinit_run;
+    all_sycouts[5].init = sycout_polimage_init;
+    all_sycouts[5].init_run = sycout_polimage_init_run;
+    all_sycouts[5].init_particle = sycout_polimage_init_particle;
+    all_sycouts[5].step = sycout_polimage_step;
+    all_sycouts[5].write = sycout_polimage_write;
 }
 void sycout_prepare_run(void) {
     int i;

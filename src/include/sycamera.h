@@ -111,8 +111,13 @@ double cone_dist_Ihat(double, double, double);
 double cone_dist_Ihat_spec(double, double, double);
 double *cone_dist_get_wavelengths(void);
 double *cone_dist_get_spectrum(void);
+double *cone_dist_get_polarization(void);
+double **cone_dist_get_polarization_spectrum(void);
 int cone_dist_get_spectrum_length(void);
 void cone_dist_add_spectrum(double*, double);
+void cone_dist_add_polarization(double*, double);
+void cone_dist_add_polarization_spectrum(double**, double);
+void cone_dist_add_spectrum_and_polarization(double);
 void cone_dist_reset_spectrum(void);
 
 void isotropic_init(enum sycamera_radiation_type, double*, int, int);
@@ -166,12 +171,16 @@ void sycamera_pdist_init_particle(double);
 double sycamera_pdist_int(double, double, double, double, double, double, double, double, double, double, double, double, double);
 void sycamera_pdist_test(void);
 double *sycamera_pdist_get_spectrum(void);
+double *sycamera_pdist_get_polarization(void);
+double **sycamera_pdist_get_polarization_spectrum(void);
 double *sycamera_pdist_get_wavelengths(void);
 int sycamera_pdist_get_spectrum_length(void);
 
 double *sycamera_get_spectrum(void);
 double *sycamera_get_wavelengths(void);
 int sycamera_get_spectrum_length(void);
+double *sycamera_get_polarization(void);
+double **sycamera_get_polarization_spectrum(void);
 
 /* Output functions */
 //void sycamera_image_output(const char*, camera_image*, int);
