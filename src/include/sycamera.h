@@ -119,6 +119,7 @@ void cone_dist_add_polarization(double*, double);
 void cone_dist_add_polarization_spectrum(double**, double);
 void cone_dist_add_spectrum_and_polarization(double);
 void cone_dist_reset_spectrum(void);
+void cone_dist_reset_polarization(void);
 
 void isotropic_init(enum sycamera_radiation_type, double*, int, int);
 void isotropic_init_run(void);
@@ -166,7 +167,7 @@ int sycamera_pas2_valid(double, double, double, double);
 double sycamera_pas2_int(void);
 
 void sycamera_pdist_init(double, double, int);
-void sycamera_pdist_init_run(double*);
+void sycamera_pdist_init_run(void);
 void sycamera_pdist_init_particle(double);
 double sycamera_pdist_int(double, double, double, double, double, double, double, double, double, double, double, double, double);
 void sycamera_pdist_test(void);

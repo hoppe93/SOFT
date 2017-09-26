@@ -27,10 +27,10 @@ double cone_dist_prefactor, cone_dist_preprefactor,
 	   cone_dist_sintheta, cone_dist_B, cone_dist_betapar2, cone_dist_betaperp2,
 	   cone_dist_gammapar2, cone_dist_betapar, cone_dist_betaperp,
 	   /* The polarization has four components:
-		* [0] = Real component of A_{left-right}
-		* [1] = Imaginary component of A_{left-right}
-		* [2] = Real component of A_{up-down}
-		* [3] = Imaginary component A_{up-down}
+		* [0] = |A_{left-right}|^2
+		* [1] = |A_{up-down}|^2
+		* [2] = Real component of A_{left-right} x A_{up-down}* = (Aperp^2 - Apar^2)*sina*cosa
+		* [3] = Imaginary component A_{left-right} x A_{up-down}* = Aperp*Apar
 		*/
 	   *cone_dist_polarization, cone_dist_polcosa, cone_dist_polsina,
 	   *cone_dist_wavelengths, *cone_dist_spectrum,
@@ -47,7 +47,7 @@ double (*Ihat)(double,double,double)=NULL;
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
 	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
 	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum, \
-	cone_dist_polarization, cone_dist_polarization_spectrum)
+	cone_dist_polarization_spectrum)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -92,10 +92,9 @@ void cone_dist_init(
 	//Ihat = cone_dist_Ihat_benchmark;
 
 	cone_dist_nint = integral_resolution;
-	cone_dist_polarization = malloc(sizeof(double)*NPOLARIZATION_COMPONENTS);
 }
 void cone_dist_init_run(void) {
-	sycamera_pdist_init_run(cone_dist_polarization);
+	sycamera_pdist_init_run();
 
 	cone_dist_spectrum = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization = malloc(sizeof(double)*4);
@@ -276,16 +275,6 @@ double cone_dist_Ihat(double sinmu, double cosmu, double sinmu2) {
 
 	p2f = sinmu2 * cone_dist_gammai2 * ki2;
 
-	/* Single out certain polarization? */
-	/*
-	switch (cone_dist_polarization) {
-		case SYCAMERA_POLARIZATION_PARALLEL: return factor * p1;
-		case SYCAMERA_POLARIZATION_PERPENDICULAR: return -factor * p2f * p2;
-		case SYCAMERA_POLARIZATION_BOTH:
-		default:
-			return factor * (p1 - p2f * p2);
-	}
-	*/
 	return factor * (p1 - p2f * p2);
 }
 double cone_dist_Ihat_spec(double sinmu, double cosmu, double sinmu2) {
@@ -320,6 +309,18 @@ void cone_dist_get_angles(
            rcpy = rcp->val[1] + dX*e1->val[1] + dY*e2->val[1],
            rcpz = rcp->val[2] + dX*e1->val[2] + dY*e2->val[2];
     double r = sqrt(rcpx*rcpx + rcpy*rcpy + rcpz*rcpz);
+
+	double
+		bhat_ehat = vdot3(vhat, e2),
+		bhat_rcp  = (vhat->val[0]*rcpx + vhat->val[1]*rcpy + vhat->val[2]*rcpz) / r,
+		ehat_rcp  = (vhat->val[0]*rcpx + vhat->val[1]*rcpy + vhat->val[2]*rcpz) / r,
+		bhatXrcpe = (e2->val[0] * (rcp->val[1]*vhat->val[2] - rcp->val[2]*vhat->val[1]) +
+					 e2->val[1] * (rcp->val[2]*vhat->val[0] - rcp->val[0]*vhat->val[2]) +
+					 e2->val[2] * (rcp->val[0]*vhat->val[1] - rcp->val[1]*vhat->val[0])) / r,
+		divfac = 1.0/sqrt((1-bhat_rcp*bhat_rcp)*(1-ehat_rcp*ehat_rcp));
+
+	cone_dist_polcosa = (bhat_ehat - bhat_rcp*ehat_rcp) / divfac;
+	cone_dist_polsina = bhatXrcpe / divfac;
 
     *cosmu = -(rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
     *sinmu2= 1 - (*cosmu)*(*cosmu);
@@ -391,6 +392,7 @@ double cone_dist_get_intensity(
 	fac = dX*dX*weight / (9.0*r2);
 
 	cone_dist_reset_spectrum();
+	cone_dist_reset_polarization();
 
     /* Simpson's rule */
     s = cone_dist_integrateY(-rdet, dX, rcp, vhat, fac) +

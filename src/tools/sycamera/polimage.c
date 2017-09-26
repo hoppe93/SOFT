@@ -43,29 +43,29 @@ void sycout_polimage_init(struct general_settings *settings) {
     }
 
     /* Initialize resulting image */
-	sycout_polimage_result->AlrRe = malloc(sizeof(double*)*sycout_polimage_result->pixels);
-	sycout_polimage_result->AlrIm = malloc(sizeof(double*)*sycout_polimage_result->pixels);
-	sycout_polimage_result->AudRe = malloc(sizeof(double*)*sycout_polimage_result->pixels);
-	sycout_polimage_result->AudIm = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->Alr2 = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->Aud2 = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->ARe = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->AIm = malloc(sizeof(double*)*sycout_polimage_result->pixels);
 
-	sycout_polimage_result->AlrRe[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
-	sycout_polimage_result->AlrIm[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
-	sycout_polimage_result->AudRe[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
-	sycout_polimage_result->AudIm[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->Alr2[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->Aud2[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->ARe[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->AIm[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
 
 	for (i = 0; i < sycout_polimage_result->pixels; i++) {
 		if (i > 0) {
-			sycout_polimage_result->AlrRe[i] = sycout_polimage_result->AlrRe[i-1] + sycout_polimage_result->pixels;
-			sycout_polimage_result->AlrIm[i] = sycout_polimage_result->AlrIm[i-1] + sycout_polimage_result->pixels;
-			sycout_polimage_result->AudRe[i] = sycout_polimage_result->AudRe[i-1] + sycout_polimage_result->pixels;
-			sycout_polimage_result->AudIm[i] = sycout_polimage_result->AudIm[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->Alr2[i] = sycout_polimage_result->Alr2[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->Aud2[i] = sycout_polimage_result->Aud2[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->ARe[i] = sycout_polimage_result->ARe[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->AIm[i] = sycout_polimage_result->AIm[i-1] + sycout_polimage_result->pixels;
 		}
 
 		for (j = 0; j < sycout_polimage_result->pixels; j++) {
-			sycout_polimage_result->AlrRe[i][j] = 0;
-			sycout_polimage_result->AlrIm[i][j] = 0;
-			sycout_polimage_result->AudRe[i][j] = 0;
-			sycout_polimage_result->AudIm[i][j] = 0;
+			sycout_polimage_result->Alr2[i][j] = 0;
+			sycout_polimage_result->Aud2[i][j] = 0;
+			sycout_polimage_result->ARe[i][j] = 0;
+			sycout_polimage_result->AIm[i][j] = 0;
 		}
 	}
 }
@@ -73,29 +73,29 @@ void sycout_polimage_init_run(void) {
     int i, j;
 	sycout_polimage_camim = malloc(sizeof(camera_polimage));
 	sycout_polimage_camim->pixels = sycout_polimage_result->pixels;
-	sycout_polimage_camim->AlrRe = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AlrIm = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AudRe = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AudIm = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->Alr2 = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->Aud2 = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->ARe = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->AIm = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
 
-	sycout_polimage_camim->AlrRe[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AlrIm[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AudRe[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AudIm[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->Alr2[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->Aud2[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->ARe[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->AIm[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
 
 	for (i = 0; i < sycout_polimage_camim->pixels; i++) {
 		if (i > 0) {
-			sycout_polimage_camim->AlrRe[i] = sycout_polimage_camim->AlrRe[i-1] + sycout_polimage_camim->pixels;
-			sycout_polimage_camim->AlrIm[i] = sycout_polimage_camim->AlrIm[i-1] + sycout_polimage_camim->pixels;
-			sycout_polimage_camim->AudRe[i] = sycout_polimage_camim->AudRe[i-1] + sycout_polimage_camim->pixels;
-			sycout_polimage_camim->AudIm[i] = sycout_polimage_camim->AudIm[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->Alr2[i] = sycout_polimage_camim->Alr2[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->Aud2[i] = sycout_polimage_camim->Aud2[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->ARe[i] = sycout_polimage_camim->ARe[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->AIm[i] = sycout_polimage_camim->AIm[i-1] + sycout_polimage_camim->pixels;
 		}
 
 		for (j = 0; j < sycout_polimage_camim->pixels; j++) {
-			sycout_polimage_camim->AlrRe[i][j] = 0;
-			sycout_polimage_camim->AlrIm[i][j] = 0;
-			sycout_polimage_camim->AudRe[i][j] = 0;
-			sycout_polimage_camim->AudIm[i][j] = 0;
+			sycout_polimage_camim->Alr2[i][j] = 0;
+			sycout_polimage_camim->Aud2[i][j] = 0;
+			sycout_polimage_camim->ARe[i][j] = 0;
+			sycout_polimage_camim->AIm[i][j] = 0;
 		}
 	}
 }
@@ -107,10 +107,10 @@ void sycout_polimage_deinit_run(void) {
 		int i, j;
 		for (i = 0; i < sycout_polimage_camim->pixels; i++) {
 			for (j = 0; j < sycout_polimage_camim->pixels; j++) {
-				sycout_polimage_result->AlrRe[i][j] += sycout_polimage_camim->AlrRe[i][j];
-				sycout_polimage_result->AlrIm[i][j] += sycout_polimage_camim->AlrIm[i][j];
-				sycout_polimage_result->AudRe[i][j] += sycout_polimage_camim->AudRe[i][j];
-				sycout_polimage_result->AudIm[i][j] += sycout_polimage_camim->AudIm[i][j];
+				sycout_polimage_result->Alr2[i][j] += sycout_polimage_camim->Alr2[i][j];
+				sycout_polimage_result->Aud2[i][j] += sycout_polimage_camim->Aud2[i][j];
+				sycout_polimage_result->ARe[i][j] += sycout_polimage_camim->ARe[i][j];
+				sycout_polimage_result->AIm[i][j] += sycout_polimage_camim->AIm[i][j];
 			}
 		}
 	}
@@ -121,37 +121,15 @@ void sycout_polimage_deinit_run(void) {
 void sycout_polimage_step(struct sycout_data *data) {
     int i = (int)(data->i*sycout_polimage_result->pixels);
     int j = (int)(data->j*sycout_polimage_result->pixels);
-	double *polarization = sycamera_get_polarization(),
+	double *pol = sycamera_get_polarization(),
 			sd = sqrt(data->differential);
 	
-	if (polarization == NULL) return;
+	if (pol == NULL) return;
 
-	sycout_polimage_camim->AlrRe[j][i] += polarization[0] * sd;
-	sycout_polimage_camim->AlrIm[j][i] += polarization[1] * sd;
-	sycout_polimage_camim->AudRe[j][i] += polarization[2] * sd;
-	sycout_polimage_camim->AudIm[j][i] += polarization[3] * sd;
-}
-
-/**
- * Combine the polimage in a file with the
- * given polimage (basically, add them together)
- */
-void sycout_polimage_combine(sFILE *sf, camera_polimage *ci) {
-	int i, j;
-	sfilesize_t dims[2];
-	double **AlrRe = sf->get_doubles(sf, "AlrRe", dims),
-		   **AlrIm = sf->get_doubles(sf, "AlrIm", dims),
-		   **AudRe = sf->get_doubles(sf, "AudRe", dims),
-		   **AudIm = sf->get_doubles(sf, "AudIm", dims);
-	
-    for (i = 0; i < ci->pixels; i++) {
-        for (j = 0; j < ci->pixels; j++) {
-			ci->AlrRe[i][j] += AlrRe[i][j];
-			ci->AlrIm[i][j] += AlrIm[i][j];
-			ci->AudRe[i][j] += AudRe[i][j];
-			ci->AudIm[i][j] += AudIm[i][j];
-		}
-	}
+	sycout_polimage_camim->Alr2[j][i] += pol[0] * sd;
+	sycout_polimage_camim->Aud2[j][i] += pol[1] * sd;
+	sycout_polimage_camim->ARe[j][i] += pol[2] * sd;
+	sycout_polimage_camim->AIm[j][i] += pol[3] * sd;
 }
 
 /**
@@ -166,21 +144,21 @@ void sycout_polimage_output(sFILE *sf, camera_polimage *ci) {
 	sf->write_list(sf, "detectorPosition", Rdet->val, 3);
 	sf->write_list(sf, "detectorDirection", ddet->val, 3);
 	sf->write_list(sf, "detectorVisang", &visang, 1);
-	sf->write_image(sf, "AlrRe", ci->AlrRe, ci->pixels);
-	sf->write_image(sf, "AlrIm", ci->AlrIm, ci->pixels);
-	sf->write_image(sf, "AudRe", ci->AudRe, ci->pixels);
-	sf->write_image(sf, "AudIm", ci->AudIm, ci->pixels);
+	sf->write_image(sf, "Alr2", ci->Alr2, ci->pixels);
+	sf->write_image(sf, "Aud2", ci->Aud2, ci->pixels);
+	sf->write_image(sf, "ARe", ci->ARe, ci->pixels);
+	sf->write_image(sf, "AIm", ci->AIm, ci->pixels);
 	sf->write_array(sf, "wall", wall, 2, d->n);
 }
+/**
+ * "High-level" interface to outputting an image.
+ * Assembles the image from all MPI processes and
+ * makes the root process write the output file in
+ * an appropriate format.
+ */
 void sycout_polimage_write(int mpi_rank, int nprocesses) {
 	sFILE *sf;
 	enum sfile_type ftype;
-
-#ifdef USE_MPI
-	printf("[%d] (sycout polimage) Waiting for 'output ready' from previous process.\n", mpi_rank);
-	smpi_wor(SYCOUT_MPIID_POLIMAGE);
-	printf("[%d] (sycout polimage) Received 'output ready' signal from previous process.\n", mpi_rank);
-#endif
 
 	ftype = sfile_get_filetype(sycout_polimage_filename);
 	if (ftype == FILETYPE_UNKNOWN) {
@@ -196,6 +174,7 @@ void sycout_polimage_write(int mpi_rank, int nprocesses) {
 	 * the image that has already been written
 	 * and add it to our image.
 	 */
+	/*
 	if (mpi_rank > 0) {
 		if (sf->open(sf, sycout_polimage_filename, SFILE_MODE_READ)) {
 			sycout_polimage_combine(sf, sycout_polimage_result);
@@ -204,23 +183,60 @@ void sycout_polimage_write(int mpi_rank, int nprocesses) {
     		fprintf(stderr, "[%d] WARNING: Unable to open file for reading: '%s'\n", mpi_rank, sycout_polimage_filename);
 		}
 	}
-
-	if (!sf->open(sf, sycout_polimage_filename, SFILE_MODE_WRITE)) {
-        fprintf(stderr, "[%d] ERROR: Unable to open file for writing: '%s'\n", mpi_rank, sycout_polimage_filename);
-        exit(1);
-	}
-
-	sycout_polimage_output(sf, sycout_polimage_result);
-	sf->close(sf);
+	*/
 
 #ifdef USE_MPI
-    printf("[%d] (sycout polimage) Done, sending 'output ready' to next process.\n", mpi_rank);
-    smpi_sor(SYCOUT_MPIID_POLIMAGE);
+	/**
+	 * First, if root process, gather images
+	 * from other processes.
+	 */
+	int pixels2 = sycout_polimage_camim->pixels*sycout_polimage_camim->pixels;
+	if (mpi_rank == 0) {
+		int i, j;
+		double *tmp = malloc(sizeof(double)*pixels2);
+		for (i = 1; i < nprocesses; i++) {
+			/* Alr2 */
+			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
+			for (j = 0; j < pixels2; j++)
+				sycout_polimage_result->Alr2[0][j] += tmp[j];
 
-	if (mpi_rank == nprocesses-1) {
-#endif
-		printf("Wrote camera polimage to '%s'\n", sycout_polimage_filename);
+			/* Aud2 */
+			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
+			for (j = 0; j < pixels2; j++)
+				sycout_polimage_result->Aud2[0][j] += tmp[j];
+
+			/* ARe */
+			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
+			for (j = 0; j < pixels2; j++)
+				sycout_polimage_result->ARe[0][j] += tmp[j];
+
+			/* AIm */
+			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
+			for (j = 0; j < pixels2; j++)
+				sycout_polimage_result->AIm[0][j] += tmp[j];
+		}
+		free(tmp);
+
+		/* Then write the output file */
+#endif/*USE_MPI*/
+
+		if (!sf->open(sf, sycout_polimage_filename, SFILE_MODE_WRITE)) {
+			fprintf(stderr, "[%d] ERROR: Unable to open file for writing: '%s'\n", mpi_rank, sycout_polimage_filename);
+			exit(1);
+		}
+
+		sycout_polimage_output(sf, sycout_polimage_result);
+		sf->close(sf);
+
 #ifdef USE_MPI
+	} else {	/* Else, send data to root process */
+		smpi_send_matrix(sycout_polimage_camim->Alr2[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->Aud2[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->ARe[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->AIm[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
 	}
 #endif
+
+	printf("Wrote camera polimage to '%s'\n", sycout_polimage_filename);
 }
+

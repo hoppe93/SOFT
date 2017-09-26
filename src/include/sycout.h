@@ -96,8 +96,8 @@ void sycout_image_write(int, int);
  *  POLARIZED IMAGE SYCOUT  *
  ****************************/
 typedef struct {
-	double **AlrRe, **AlrIm,
-		   **AudRe, **AudIm;
+	double **Alr2, **Aud2,
+		   **ARe, **AIm;
 	int pixels;
 } camera_polimage;
 

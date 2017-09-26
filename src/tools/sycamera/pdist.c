@@ -17,7 +17,8 @@ double *sycamera_pdist_omegas, sycamera_pdist_dl,
 	sycamera_pdist_omega_low, sycamera_pdist_omega_up,
 	sycamera_pdist_ximax, sycamera_pdist_ximin, *sycamera_pdist_polarization,
 	*sycamera_pdist_spectrum, *sycamera_pdist_wavelengths,
-	sycamera_pdist_spec_prefactor, **sycamera_pdist_polarization_spectrum;
+	sycamera_pdist_spec_prefactor, **sycamera_pdist_polarization_spectrum,
+	sycamera_pdist_dlambda;
 int sycamera_pdist_spectrum_resolution, sycamera_pdist_haswarned;
 gsl_interp_accel *sycamera_pdist_acc1, *sycamera_pdist_acc2,
 				 *sycamera_pdist_spec_acc1, *sycamera_pdist_spec_acc2;
@@ -43,8 +44,10 @@ void sycamera_pdist_init(double omega0, double omega1, int spectrum_resolution) 
 	for (i = 1; i < sycamera_pdist_spectrum_resolution; i++) {
 		sycamera_pdist_wavelengths[i] = sycamera_pdist_wavelengths[i-1] + dlambda;
 	}
+
+	sycamera_pdist_dlambda = dlambda;
 }
-void sycamera_pdist_init_run(double *polarization) {
+void sycamera_pdist_init_run(void) {
 	sycamera_pdist_acc1 = gsl_interp_accel_alloc();
 	sycamera_pdist_acc2 = gsl_interp_accel_alloc();
 	sycamera_pdist_spec_acc1 = gsl_interp_accel_alloc();
@@ -115,8 +118,14 @@ double sycamera_pdist_int(
 	
 	/* Compute integrals */
 	double I13l, I13u, I23l, I23u, I13, I23,
-		   xi2K13, xi2K23, xi, lambda, Apar, Aperp,
-		   T1, T2, pT, pol0, pol1, pol2, pol3;
+		   xi2K13, xi2K23, xi, lambda, Apar2, Aperp2,
+		   pT, pol0, pol1, pol2, pol3,
+		   polsin2a=polsina*polsina, polcos2a=polcosa*polcosa;
+
+	sycamera_pdist_polarization[0] = 0.0;
+	sycamera_pdist_polarization[1] = 0.0;
+	sycamera_pdist_polarization[2] = 0.0;
+	sycamera_pdist_polarization[3] = 0.0;
 
 	/* Compute spectrum */
 	int i;
@@ -127,29 +136,30 @@ double sycamera_pdist_int(
 		xi2K23 = gsl_spline_eval(sycamera_pdist_spec_spline2, xi, sycamera_pdist_spec_acc2);
 
 		pT = pf_spec / (lambda*lambda);
-		T1 = pT*xi2K23;
-		T2 = pT*mf_spec*xi2K13;
+		Apar2 = pT*xi2K23;
+		Aperp2 = pT*mf_spec*xi2K13;
 
 		/* Compute polarization stuff */
-		Apar = sqrt(T1);
-		Aperp = sqrt(T2);
+		pol0 = Aperp2*polsin2a + Apar2*polcos2a;	/* |A_{left-right}|^2 */
+		pol1 = Apar2*polcos2a + Apar2*polsin2a;		/* |A_{up-down}|^2 */
+		pol2 = (Aperp2-Apar2)*polsina*polcosa;		/* Re(A_{up-down} x A_{left-right}*) */
 
-		pol0 = Aperp*polsina;
-		pol1 = Apar*polcosa;
-		pol2 = Aperp*polcosa;
-		pol3 = Apar*polsina;
+		/* Im(A_{up-down} x A_{left-right}*) */
+		if (Apar2*Aperp2 <= 0) pol3 = 0.0;
+		else pol3 = sqrt(Apar2*Aperp2);					
 
-		sycamera_pdist_polarization[0] += pol0;
-		sycamera_pdist_polarization[1] += pol1;
-		sycamera_pdist_polarization[2] += pol2;
-		sycamera_pdist_polarization[3] += pol3;
+		//sycamera_pdist_polarization[0] += pol0 * sycamera_pdist_dlambda;
+		sycamera_pdist_polarization[0] += (Apar2 + Aperp2)*sycamera_pdist_dlambda;
+		sycamera_pdist_polarization[1] += pol1 * sycamera_pdist_dlambda;
+		sycamera_pdist_polarization[2] += pol2 * sycamera_pdist_dlambda;
+		sycamera_pdist_polarization[3] += pol3 * sycamera_pdist_dlambda;
 
 		sycamera_pdist_polarization_spectrum[0][i] = pol0;
 		sycamera_pdist_polarization_spectrum[1][i] = pol1;
 		sycamera_pdist_polarization_spectrum[2][i] = pol2;
 		sycamera_pdist_polarization_spectrum[3][i] = pol3;
 
-		sycamera_pdist_spectrum[i] = T1 + T2;
+		sycamera_pdist_spectrum[i] = Apar2 + Aperp2;
 	}
 
 	I13l = gsl_spline_eval(sycamera_pdist_spline1, lower, sycamera_pdist_acc1);
@@ -197,7 +207,7 @@ void sycamera_pdist_test(void) {
 	FILE *f;
 
 	sycamera_pdist_init(omega0, omega1, 100);
-	sycamera_pdist_init_run(NULL);
+	sycamera_pdist_init_run();
 	sycamera_pdist_init_particle(mass);
 
 	f = fopen("pdist.out", "w");

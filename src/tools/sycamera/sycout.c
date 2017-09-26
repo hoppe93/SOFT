@@ -6,7 +6,7 @@
 #include "sycout.h"
 #include "util.h"
 
-const int NUMBER_OF_SYCOUTS=6;
+const int NUMBER_OF_SYCOUTS=7;
 sycout_type *all_sycouts=NULL;
 int *sycout_selected=NULL, sycout_nselected=0;
 
@@ -60,6 +60,14 @@ void sycout_init_handler(void) {
     all_sycouts[5].init_particle = sycout_polimage_init_particle;
     all_sycouts[5].step = sycout_polimage_step;
     all_sycouts[5].write = sycout_polimage_write;
+
+	all_sycouts[3].name = setname("polspectrometer");
+	all_sycouts[3].deinit_run = sycout_polspectrometer_deinit_run;
+    all_sycouts[3].init = sycout_polspectrometer_init;
+    all_sycouts[3].init_run = sycout_polspectrometer_init_run;
+    all_sycouts[3].init_particle = sycout_polspectrometer_init_particle;
+    all_sycouts[3].step = sycout_polspectrometer_step;
+    all_sycouts[3].write = sycout_polspectrometer_write;
 }
 void sycout_prepare_run(void) {
     int i;
