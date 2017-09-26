@@ -148,8 +148,7 @@ double sycamera_pdist_int(
 		if (Apar2*Aperp2 <= 0) pol3 = 0.0;
 		else pol3 = sqrt(Apar2*Aperp2);					
 
-		//sycamera_pdist_polarization[0] += pol0 * sycamera_pdist_dlambda;
-		sycamera_pdist_polarization[0] += (Apar2 + Aperp2)*sycamera_pdist_dlambda;
+		sycamera_pdist_polarization[0] += pol0 * sycamera_pdist_dlambda;
 		sycamera_pdist_polarization[1] += pol1 * sycamera_pdist_dlambda;
 		sycamera_pdist_polarization[2] += pol2 * sycamera_pdist_dlambda;
 		sycamera_pdist_polarization[3] += pol3 * sycamera_pdist_dlambda;
