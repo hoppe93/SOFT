@@ -61,13 +61,13 @@ void sycout_init_handler(void) {
     all_sycouts[5].step = sycout_polimage_step;
     all_sycouts[5].write = sycout_polimage_write;
 
-	all_sycouts[3].name = setname("polspectrometer");
-	all_sycouts[3].deinit_run = sycout_polspectrometer_deinit_run;
-    all_sycouts[3].init = sycout_polspectrometer_init;
-    all_sycouts[3].init_run = sycout_polspectrometer_init_run;
-    all_sycouts[3].init_particle = sycout_polspectrometer_init_particle;
-    all_sycouts[3].step = sycout_polspectrometer_step;
-    all_sycouts[3].write = sycout_polspectrometer_write;
+	all_sycouts[6].name = setname("polspectrometer");
+	all_sycouts[6].deinit_run = sycout_polspectrometer_deinit_run;
+    all_sycouts[6].init = sycout_polspectrometer_init;
+    all_sycouts[6].init_run = sycout_polspectrometer_init_run;
+    all_sycouts[6].init_particle = sycout_polspectrometer_init_particle;
+    all_sycouts[6].step = sycout_polspectrometer_step;
+    all_sycouts[6].write = sycout_polspectrometer_write;
 }
 void sycout_prepare_run(void) {
     int i;

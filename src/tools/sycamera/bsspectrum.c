@@ -71,7 +71,6 @@ double sycamera_bsspec_dsigma(double E0, double p0, double p02, double eps0, dou
 		T3 = L * k/(2*p0p) * ((E0E+p02)*eps0/p03 -
 			(E0E+p2)*eps/p3 + 2*k*E0E/p0p2);
 	
-	printf("%e\n", pf * (T1+T2+T3));
 	return pf * (T1+T2+T3);
 }
 /**
