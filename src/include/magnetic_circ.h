@@ -2,6 +2,7 @@
 #define _MAGNETIC_CIRC_H
 /* Circular magnetic field handler */
 
+#include "magfield.h"
 #include "magnetic_field.h"
 #include "settings.h"
 
@@ -19,5 +20,6 @@ void magnetic_circ_init_particle(void);
 vector *magnetic_circ_eval(double, double, double);
 diff_data *magnetic_circ_diff(double, double, double);
 diff_data *magnetic_circ_diff_notor(double, double, double);
+magfield_t *magnetic_circ_get_mfdata(void);
 
 #endif/*_MAGNETIC_CIRC_H*/

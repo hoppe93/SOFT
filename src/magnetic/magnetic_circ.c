@@ -78,6 +78,9 @@ void magnetic_circ_init_run(void) {
 	magnetic_circ_diff_dd = malloc(sizeof(diff_data));
 }
 void magnetic_circ_init_particle(void) { }
+magfield_t *magnetic_circ_get_mfdata(void) {
+	return NULL;
+}
 vector *magnetic_circ_eval(double x, double y, double z) {
 	/* If we computed the B field in this point
 	 * the last time, magnetic_circ_retval

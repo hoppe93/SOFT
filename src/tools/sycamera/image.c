@@ -7,6 +7,8 @@
 #include <math.h>
 #include "config.h"
 #include "domain.h"
+#include "magfield.h"
+#include "magnetic_field.h"
 #include "sfile.h"
 #include "sycamera.h"
 #include "sycout.h"
@@ -19,6 +21,7 @@
 camera_image *sycout_image_result, *sycout_image_camim;
 char *sycout_image_filename;
 enum sycout_image_type sycout_image_brightness=SYCOUT_IMAGE_TYPE_INTENSITY;
+int sycout_image_includeWall, sycout_image_includeSeparatrix;
 
 #pragma omp threadprivate(sycout_image_camim)
 
@@ -26,6 +29,9 @@ void sycout_image_init(struct general_settings *settings) {
     int i, j;
     sycout_image_result = malloc(sizeof(camera_image));
     sycout_image_result->pixels = 0;
+
+	sycout_image_includeWall = 1;
+	sycout_image_includeSeparatrix = 1;
 
     /* Load settings */
     for (i = 0; i < settings->n; i++) {
@@ -39,10 +45,20 @@ void sycout_image_init(struct general_settings *settings) {
 			else {
 				fprintf(stderr, "WARNING: Unrecognized choice for sycout image option 'brightness': %s\n", settings->value[i]);
 			}
-        } else if (!strcmp(settings->setting[i], "pixels")) {
-			sycout_image_result->pixels = atoi(settings->value[i]);
+		} else if (!strcmp(settings->setting[i], "includeseparatrix")) {
+			if (!strcmp(settings->value[i], "yes"))
+				sycout_image_includeSeparatrix = 1;
+			else
+				sycout_image_includeSeparatrix = 0;
+		} else if (!strcmp(settings->setting[i], "includewall")) {
+			if (!strcmp(settings->value[i], "yes"))
+				sycout_image_includeWall = 1;
+			else
+				sycout_image_includeSeparatrix = 0;
         } else if (!strcmp(settings->setting[i], "name")) {
             sycout_image_filename = settings->value[i];
+        } else if (!strcmp(settings->setting[i], "pixels")) {
+			sycout_image_result->pixels = atoi(settings->value[i]);
         } else {
             fprintf(stderr, "WARNING: Unrecognized sycout image setting '%s'\n", settings->setting[i]);
         }
@@ -61,6 +77,11 @@ void sycout_image_init(struct general_settings *settings) {
 			sycout_image_result->canvas[i][j] = 0;
 		}
 	}
+
+	if (sycout_image_includeSeparatrix)
+		printf("Including separatrix data in sycout 'image' output.\n");
+	if (sycout_image_includeWall)
+		printf("Including wall data in sycout 'image' output.\n");
 }
 void sycout_image_init_run(void) {
     int i, j;
@@ -227,16 +248,34 @@ void sycout_image_combine(sFILE *sf, camera_image *ci) {
 	}
 }
 void sycout_image_output(sFILE *sf, camera_image *ci) {
-	double *wall[2];
-	domain *d = domain_get();
-	wall[0] = d->r;
-	wall[1] = d->z;
+	double *wall[2], *separatrix[2];
+	magfield_t *mf;
 
 	sf->write_list(sf, "detectorPosition", Rdet->val, 3);
 	sf->write_list(sf, "detectorDirection", ddet->val, 3);
 	sf->write_list(sf, "detectorVisang", &visang, 1);
 	sf->write_image(sf, "image", ci->canvas, ci->pixels);
-	sf->write_array(sf, "wall", wall, 2, d->n);
+
+	/* Include wall/separatrix data? */
+	mf = magnetic_handler_get_mfdata();
+	if (mf == NULL) {
+		if (sycout_image_includeWall) {
+			domain *d = domain_get();
+			wall[0] = d->r;
+			wall[1] = d->z;
+			sf->write_array(sf, "wall", wall, 2, d->n);
+		}
+	} else {
+		wall[0] = mf->wall_r;
+		wall[1] = mf->wall_z;
+		separatrix[0] = mf->sep_r;
+		separatrix[1] = mf->sep_z;
+
+		if (sycout_image_includeSeparatrix && mf->sep_r != NULL)
+			sf->write_array(sf, "separatrix", separatrix, 2, mf->nwall);
+		if (sycout_image_includeWall && mf->wall_r != NULL)
+			sf->write_array(sf, "wall", wall, 2, mf->nsep);
+	}
 }
 void sycout_image_write(int mpi_rank, int nprocesses) {
 	//FILE *f;

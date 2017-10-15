@@ -138,6 +138,15 @@ void magnetic_num_init_run(void) {
 void magnetic_num_init_particle(void) {}
 
 /**
+ * Returns the magnetic field object, containing
+ * all information about the loaded magnetic field
+ * data.
+ */
+magfield_t *magnetic_num_get_mfdata(void) {
+	return magnetic_num_field;
+}
+
+/**
  * Calculates the magnetic field strength in a given point (x,y,z).
  *
  * B: The magnetic field

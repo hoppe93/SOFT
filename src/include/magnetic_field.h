@@ -1,6 +1,7 @@
 #ifndef _MAGNETIC_FIELD_H
 #define _MAGNETIC_FIELD_H
 
+#include "magfield.h"
 #include "vector.h"
 #include "settings.h"
 
@@ -19,6 +20,7 @@ typedef struct {
 	vector* (*eval)(double, double, double);		/* Evaluate the field in the given point (cartesian coordinates) */
 	diff_data* (*diff)(double, double, double);		/* Differentiate field in the given point */
 	diff_data* (*diff_notor)(double, double, double);/* Differentiate field in the given point, but ignore field toroidal component */
+	magfield_t* (*get_mfdata)(void);				/* Returns the 'magfield_t' object currently in use */
 } magnetic_handler;
 
 void magnetic_init(void);
@@ -27,5 +29,6 @@ vector *magnetic_field_get(double, double, double);
 diff_data *magnetic_field_diff(double, double, double);
 diff_data *magnetic_field_diff_notor(double, double, double);
 magnetic_handler *magnetic_handler_get(void);		/* Get current magnetic field handler */
+magfield_t *magnetic_handler_get_mfdata(void);
 
 #endif/*_MAGNETIC_FIELD_H*/

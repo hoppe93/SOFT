@@ -21,6 +21,7 @@ void magnetic_init(void) {
 	all_handlers[0].eval = magnetic_num_get;
 	all_handlers[0].diff = magnetic_num_diff;
 	all_handlers[0].diff_notor = magnetic_num_diff_notor;
+	all_handlers[0].get_mfdata = magnetic_num_get_mfdata;
 
 	all_handlers[1].name = setname("circular");
 	all_handlers[1].init = magnetic_circ_init;
@@ -29,6 +30,7 @@ void magnetic_init(void) {
 	all_handlers[1].eval = magnetic_circ_eval;
 	all_handlers[1].diff = magnetic_circ_diff;
 	all_handlers[1].diff_notor = magnetic_circ_diff_notor;
+	all_handlers[1].get_mfdata = magnetic_circ_get_mfdata;
 }
 
 magnetic_handler *magnetic_handler_select(char *name) {
@@ -55,4 +57,7 @@ diff_data *magnetic_field_diff_notor(double x, double y, double z) {
 }
 magnetic_handler *magnetic_handler_get(void) {
 	return selected_handler;
+}
+magfield_t *magnetic_handler_get_mfdata(void) {
+	return selected_handler->get_mfdata();
 }

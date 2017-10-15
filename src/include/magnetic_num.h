@@ -15,4 +15,6 @@ void magnetic_num_init_particle(void);
 diff_data *magnetic_num_diff(double,double,double);
 diff_data *magnetic_num_diff_notor(double,double,double);
 
+magfield_t *magnetic_num_get_mfdata(void);
+
 #endif/*_MAGNETIC_NUM_H*/

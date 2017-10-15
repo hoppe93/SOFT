@@ -446,6 +446,26 @@ The ``image`` sycout generates a camera image.
    The ``intensity`` option takes the emitted radiation intensity into account, including
    spectral effects (if enabled through other options).
 
+.. option:: includeseparatrix
+
+   | **Default value:** ``yes``
+   | **Example line:** ``includeseparatrix=no``
+   | **Allowed values:** ``no`` and ``yes``
+
+   Specifies whether or not to include separatrix data from the input magnetic
+   equilibrium data file in the output. By default, it is set to ``yes``. If no separatrix
+   data is available, the ``separatrix`` variable is omitted from the output file.
+
+.. option:: includewall
+
+   | **Default value:** ``yes``
+   | **Example line:** ``includewall=no``
+   | **Allowed values:** ``no`` and ``yes``
+
+   Specifies whether or not to include wall data from the input magnetic
+   equilibrium data file in the output. By default, it is set to ``yes``. If no wall
+   data is available, the ``wall`` variable is omitted from the output file.
+
 .. option:: name
 
    | **Default value:** None
