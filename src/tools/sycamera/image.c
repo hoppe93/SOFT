@@ -272,9 +272,9 @@ void sycout_image_output(sFILE *sf, camera_image *ci) {
 		separatrix[1] = mf->sep_z;
 
 		if (sycout_image_includeSeparatrix && mf->sep_r != NULL)
-			sf->write_array(sf, "separatrix", separatrix, 2, mf->nwall);
+			sf->write_array(sf, "separatrix", separatrix, 2, mf->nsep);
 		if (sycout_image_includeWall && mf->wall_r != NULL)
-			sf->write_array(sf, "wall", wall, 2, mf->nsep);
+			sf->write_array(sf, "wall", wall, 2, mf->nwall);
 	}
 }
 void sycout_image_write(int mpi_rank, int nprocesses) {
