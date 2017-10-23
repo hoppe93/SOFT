@@ -221,7 +221,7 @@ void particles_init(struct particlespec *spec) {
 	if (particles_rn <= 1 || particles_r0 == particles_r1) particles_dr = 0.;
 	else {
 		particles_dr = (particles_r1-particles_r0)/(particles_rn-1);
-		particles_diffel *= fabs(particles_dr);
+		//particles_diffel *= fabs(particles_dr);
 	}
 
 	if (particles_param1n <= 1 || particles_param10 == particles_param11) particles_dparam1 = 0.;
@@ -394,7 +394,7 @@ int particles_stop_condition(void) {
  * current particle (i.e. the integral differential element).
  */
 double particles_get_differential_element(double param1, double param2) {
-	double dV = particles_diffel * particles_dr;
+	double dV = particles_diffel;
 	double m = particles_part->mass, c = LIGHTSPEED;
 
 	switch (particles_param1spec->type) {
@@ -695,7 +695,7 @@ particle *particles_generate_at(double r, double param1, double param2) {
 	particles_part->iv1   = particles_curr_param1;
 	particles_part->iv2   = particles_curr_param2;
 
-	particles_part->diffel = particles_get_differential_element(param1, param2) * particles_dr;
+	particles_part->diffel = particles_get_differential_element(param1, param2);
 
 	/* Compute gamma * m */
 	double gm = sqrt(particles_part->mass*particles_part->mass + pabs2/(LIGHTSPEED*LIGHTSPEED));

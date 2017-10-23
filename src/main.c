@@ -192,7 +192,7 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 	/* Prepare to compute the Jacobian */
 	if (usetool->require_jacobian) {
 		double r0[3], *tr0;
-		r0[0] = p->r0[0] + 0.5*particles_get_drho();
+		r0[0] = p->r0[0] + particles_get_drho();
 		r0[1] = p->r0[1];
 		r0[2] = p->r0[2];
 
