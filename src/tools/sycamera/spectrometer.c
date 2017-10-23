@@ -156,7 +156,7 @@ void sycout_spectrometer_write(int mpi_rank, int nprocesses) {
 #ifdef USE_MPI
 	if (mpi_rank == nprocesses-1) {
 #endif
-	sycout_spectrometer_normalize(sycout_spectrometer_result, sycout_spectrometer_nlambdas);
+	//sycout_spectrometer_normalize(sycout_spectrometer_result, sycout_spectrometer_nlambdas);
 #ifdef USE_MPI
 	}
 #endif
