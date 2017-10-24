@@ -14,6 +14,7 @@
 #include "equations.h"
 #include "global.h"
 #include "IO_data.h"
+#include "magnetic_field.h"
 #include "particles.h"
 #include "rkf45.h"
 #include "settings.h"
@@ -42,7 +43,9 @@ double *sycamera_costor, *sycamera_sintor;	/* Arrays containing cos/sin of toroi
 double sycamera_lasti, sycamera_lastj,
 	   sycamera_lastlx, sycamera_lastly;
 double sycamera_particle_diffel;/* Particle differential element */
-double sycamera_zeff;			/* Effective plasma charge, used by bremsstrahlung components */
+double sycamera_zeff,			/* Effective plasma charge, used by bremsstrahlung components */
+	   sycamera_ppar0,			/* Initial parallel momentum of particle */
+	   sycamera_B0;				/* Magnetic field strength at begnning of particle orbit */
 
 vector *temps=NULL, *e1, *e2;
 const int NUMBER_OF_TEMPS=7;
@@ -60,7 +63,7 @@ int (*intensity_spectrum_length)(void)=NULL;
 double *(*intensity_polarization)(void)=NULL;
 double **(*intensity_polarization_spectrum)(void)=NULL;
 
-#pragma omp threadprivate(sol1,sol2,temps,lasttime,sycamera_distfunc_weight,sycamera_lasti,sycamera_lastj,sycamera_lastlx,sycamera_lastly,sycamera_particle_diffel)
+#pragma omp threadprivate(sol1,sol2,temps,lasttime,sycamera_distfunc_weight,sycamera_lasti,sycamera_lastj,sycamera_lastlx,sycamera_lastly,sycamera_particle_diffel,sycamera_ppar0,sycamera_B0)
 
 /**
  * Initialize the synchrotron camera.
@@ -286,10 +289,17 @@ void sycamera_init_run(unsigned int variables) {
 	(*intensity_init_run)();
 }
 ode_solution *sycamera_init_particle(particle *p) {
+	double gamma, v2;
 	lasttime = p->t0;
 	sycamera_charge = p->charge;
 	sycamera_mass = p->mass;
 	sycamera_particle_diffel = p->diffel;
+
+	v2 = p->v0[0]*p->v0[0] + p->v0[1]*p->v0[1] + p->v0[2]*p->v0[2];
+	gamma = 1 / sqrt(1 - v2/(LIGHTSPEED*LIGHTSPEED));
+	sycamera_ppar0 = p->mass * gamma * p->vpar;
+	vector *B = magnetic_field_get(p->r0[0], p->r0[1], p->r0[2]);
+	sycamera_B0 = vnorm3(B);
 
 	/* Initialize camera map particle */
 	sycout_init_particle(p);
@@ -304,9 +314,7 @@ ode_solution *sycamera_init_particle(particle *p) {
 
 	if (sycamera_has_distfunc) {
 		double r = hypot(p->r0[0], p->r0[1]);
-		double v2 = p->vpar*p->vpar + p->vperp*p->vperp;
 		double v = sqrt(v2);
-		double gamma = 1/sqrt(1 - v2 / (LIGHTSPEED*LIGHTSPEED));
 		double momentum = gamma * p->mass * v;
 		double costheta = fabs(p->vpar / v);
 
@@ -368,10 +376,12 @@ void sycamera_step(ode_solution *solver_object, step_data *sd) {
  */
 void sycamera_register_radiation(double i, double j, step_data *sd, double intensity, double RdPhi) {
 	struct sycout_data data;
+	double B_B0 = sd->B / sycamera_B0;
 	data.sd = sd;
 	//data.differential = RdPhi * sd->Jdtdrho * sycamera_particle_diffel;
 	data.RdPhi = RdPhi;
 	data.Jdtdrho = sd->Jdtdrho;
+	data.Jp = fabs(B_B0 * sycamera_ppar0 / sqrt(sd->ppar2));
 	data.particle_diffel = sycamera_particle_diffel;
 	data.distribution_function = 1;
 
@@ -381,7 +391,7 @@ void sycamera_register_radiation(double i, double j, step_data *sd, double inten
 	data.i = i;
 	data.j = j;
 
-	data.differential = data.RdPhi * data.Jdtdrho * data.particle_diffel * data.distribution_function;
+	data.differential = data.RdPhi * data.Jdtdrho * data.Jp * data.particle_diffel * data.distribution_function;
 	data.brightness = intensity;
 
 	if (DEBUG_OUTPUT)

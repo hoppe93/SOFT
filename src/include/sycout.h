@@ -26,6 +26,7 @@ struct sycout_data {
 	double differential;/* Differential element */
 	double RdPhi;		/* Toroidal differential element */
 	double Jdtdrho;		/* Poloidal trajectory differential */
+	double Jp;			/* Momentum-space jacobian */
 	double particle_diffel;/* Particle differential element */
 	double distribution_function;/* Distribution function evaluated in current point */
     double i, j;           /* Pixel indices */
