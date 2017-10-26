@@ -23,6 +23,7 @@ mathematical details of how SOFT is implemented, you should look into the
   distributions
   geomkern
   paramref
+  troubleshooting
 
 
 Indices and tables
