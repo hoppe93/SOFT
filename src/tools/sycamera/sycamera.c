@@ -14,6 +14,7 @@
 #include "equations.h"
 #include "global.h"
 #include "IO_data.h"
+#include "magnetic_field.h"
 #include "particles.h"
 #include "rkf45.h"
 #include "settings.h"
@@ -42,15 +43,16 @@ double *sycamera_costor, *sycamera_sintor;	/* Arrays containing cos/sin of toroi
 double sycamera_lasti, sycamera_lastj,
 	   sycamera_lastlx, sycamera_lastly;
 double sycamera_particle_diffel;/* Particle differential element */
-double sycamera_zeff;			/* Effective plasma charge, used by bremsstrahlung components */
+double sycamera_zeff,			/* Effective plasma charge, used by bremsstrahlung components */
+	   sycamera_ppar0,			/* Initial parallel momentum of particle */
+	   sycamera_B0;				/* Magnetic field strength at begnning of particle orbit */
 
 vector *temps=NULL, *e1, *e2;
 const int NUMBER_OF_TEMPS=7;
 int sycamera_has_distfunc;		/* Whether or not a distribution function is available */
 enum sycamera_radiation_type radiation_type=SYCAMERA_RADIATION_SYNCHROTRON;
-enum sycamera_polarization_type sycamera_polarization=SYCAMERA_POLARIZATION_BOTH;
 
-void (*intensity_init)(enum sycamera_radiation_type, enum sycamera_polarization_type, double*, int, int)=NULL;
+void (*intensity_init)(enum sycamera_radiation_type, double*, int, int)=NULL;
 void (*intensity_init_run)(void)=NULL;
 void (*intensity_init_particle)(particle*)=NULL;
 void (*intensity_init_step)(step_data*)=NULL;
@@ -58,8 +60,10 @@ double (*intensity_function)(step_data*, vector*, vector*, vector*, vector*, vec
 double *(*intensity_spectrum)(void)=NULL;
 double *(*intensity_wavelengths)(void)=NULL;
 int (*intensity_spectrum_length)(void)=NULL;
+double *(*intensity_polarization)(void)=NULL;
+double **(*intensity_polarization_spectrum)(void)=NULL;
 
-#pragma omp threadprivate(sol1,sol2,temps,lasttime,sycamera_distfunc_weight,sycamera_lasti,sycamera_lastj,sycamera_lastlx,sycamera_lastly,sycamera_particle_diffel)
+#pragma omp threadprivate(sol1,sol2,temps,lasttime,sycamera_distfunc_weight,sycamera_lasti,sycamera_lastj,sycamera_lastlx,sycamera_lastly,sycamera_particle_diffel,sycamera_ppar0,sycamera_B0)
 
 /**
  * Initialize the synchrotron camera.
@@ -85,7 +89,6 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	visang = 0;
 	sycamera_has_distfunc = 0;
 
-	sycamera_polarization = SYCAMERA_POLARIZATION_BOTH;
 	sycamera_zeff = 1.0;
 
 	double *lambdas=NULL;
@@ -98,6 +101,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	intensity_spectrum = &cone_delta_get_spectrum;
 	intensity_wavelengths = &cone_delta_get_wavelengths;
 	intensity_spectrum_length = &cone_delta_get_spectrum_length;
+	intensity_polarization = NULL;
+	intensity_polarization_spectrum = NULL;
 
 	/* Loop over all settings */
 	int i;
@@ -115,6 +120,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &cone_delta_get_spectrum;
 				intensity_wavelengths = &cone_delta_get_wavelengths;
 				intensity_spectrum_length = &cone_delta_get_spectrum_length;
+				intensity_polarization = NULL;
+				intensity_polarization_spectrum = NULL;
 			} else if (!strcmp(set->value[i], "dist")) {
 				printf("Selecting cone model 'dist'...\n");
 				intensity_init = &cone_dist_init;
@@ -125,6 +132,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &cone_dist_get_spectrum;
 				intensity_wavelengths = &cone_dist_get_wavelengths;
 				intensity_spectrum_length = &cone_dist_get_spectrum_length;
+				intensity_polarization = &cone_dist_get_polarization;
+				intensity_polarization_spectrum = &cone_dist_get_polarization_spectrum;
 			} else if (!strcmp(set->value[i], "isotropic")) {
 				printf("Selecting cone model 'isotropic'...\n");
 				intensity_init = &isotropic_init;
@@ -135,6 +144,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &isotropic_get_spectrum;
 				intensity_wavelengths = &isotropic_get_wavelengths;
 				intensity_spectrum_length = &isotropic_get_spectrum_length;
+				intensity_polarization = NULL;
+				intensity_polarization_spectrum = NULL;
 			} else if (!strcmp(set->value[i], "sphere")) {
 				printf("Selecting cone model 'sphere'...\n");
 				intensity_init = &sphere_init;
@@ -145,6 +156,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &sphere_get_spectrum;
 				intensity_wavelengths = &sphere_get_wavelengths;
 				intensity_spectrum_length = &sphere_get_spectrum_length;
+				intensity_polarization = NULL;
+				intensity_polarization_spectrum = NULL;
 			} else {
 				fprintf(stderr, "Unrecognized cone type given in pi-file: %s\n", set->value[i]);
 				exit(-1);
@@ -160,17 +173,6 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 		} else if (!strcmp(set->setting[i], "position")) {
 			Rdet->val = atodpn(set->value[i], 3, Rdet->val);
 			Rdet->n = 3;
-		} else if (!strcmp(set->setting[i], "polarization")) {
-			if (!strcmp(set->value[i], "parallel")) {
-				sycamera_polarization = SYCAMERA_POLARIZATION_PARALLEL;
-			} else if (!strcmp(set->value[i], "perpendicular")) {
-				sycamera_polarization = SYCAMERA_POLARIZATION_PERPENDICULAR;
-			} else if (!strcmp(set->value[i], "both")) {
-				sycamera_polarization = SYCAMERA_POLARIZATION_BOTH;
-			} else {
-				fprintf(stderr, "sycamera: Unrecognized option for option 'polarization': '%s'.\n", set->value[i]);
-				exit(-1);
-			}
 		} else if (!strcmp(set->setting[i], "product")) {
 			sycout_select(set->value[i], sycout_set, nsycout_settings);
 		} else if (!strcmp(set->setting[i], "radiation")) {
@@ -205,7 +207,7 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	}
 
 	/* Initialize cone handler */
-	(*intensity_init)(radiation_type, sycamera_polarization, lambdas, spectrum_resolution, integral_resolution);
+	(*intensity_init)(radiation_type, lambdas, spectrum_resolution, integral_resolution);
 
 	/* Compute tangent of half vision angle for future use */
 	if (visang <= 0 || visang >= PI) {
@@ -287,10 +289,17 @@ void sycamera_init_run(unsigned int variables) {
 	(*intensity_init_run)();
 }
 ode_solution *sycamera_init_particle(particle *p) {
+	double gamma, v2;
 	lasttime = p->t0;
 	sycamera_charge = p->charge;
 	sycamera_mass = p->mass;
 	sycamera_particle_diffel = p->diffel;
+
+	v2 = p->v0[0]*p->v0[0] + p->v0[1]*p->v0[1] + p->v0[2]*p->v0[2];
+	gamma = 1 / sqrt(1 - v2/(LIGHTSPEED*LIGHTSPEED));
+	sycamera_ppar0 = p->mass * gamma * p->vpar;
+	vector *B = magnetic_field_get(p->r0[0], p->r0[1], p->r0[2]);
+	sycamera_B0 = vnorm3(B);
 
 	/* Initialize camera map particle */
 	sycout_init_particle(p);
@@ -305,9 +314,7 @@ ode_solution *sycamera_init_particle(particle *p) {
 
 	if (sycamera_has_distfunc) {
 		double r = hypot(p->r0[0], p->r0[1]);
-		double v2 = p->vpar*p->vpar + p->vperp*p->vperp;
 		double v = sqrt(v2);
-		double gamma = 1/sqrt(1 - v2 / (LIGHTSPEED*LIGHTSPEED));
 		double momentum = gamma * p->mass * v;
 		double costheta = fabs(p->vpar / v);
 
@@ -369,10 +376,12 @@ void sycamera_step(ode_solution *solver_object, step_data *sd) {
  */
 void sycamera_register_radiation(double i, double j, step_data *sd, double intensity, double RdPhi) {
 	struct sycout_data data;
+	double B_B0 = sd->B / sycamera_B0;
 	data.sd = sd;
 	//data.differential = RdPhi * sd->Jdtdrho * sycamera_particle_diffel;
 	data.RdPhi = RdPhi;
 	data.Jdtdrho = sd->Jdtdrho;
+	data.Jp = fabs(B_B0 * sycamera_ppar0 / sqrt(sd->ppar2));
 	data.particle_diffel = sycamera_particle_diffel;
 	data.distribution_function = 1;
 
@@ -382,7 +391,7 @@ void sycamera_register_radiation(double i, double j, step_data *sd, double inten
 	data.i = i;
 	data.j = j;
 
-	data.differential = data.RdPhi * data.Jdtdrho * data.particle_diffel * data.distribution_function;
+	data.differential = data.RdPhi * data.Jdtdrho * data.Jp * data.particle_diffel * data.distribution_function;
 	data.brightness = intensity;
 
 	if (DEBUG_OUTPUT)
@@ -503,6 +512,16 @@ void sycamera_output(equation *eq) {
 double *sycamera_get_spectrum(void) { return intensity_spectrum(); }
 double *sycamera_get_wavelengths(void) { return intensity_wavelengths(); }
 int sycamera_get_spectrum_length(void) { return intensity_spectrum_length(); }
+double *sycamera_get_polarization(void) {
+	if (intensity_polarization != NULL)
+		return intensity_polarization();
+	else return NULL;
+}
+double **sycamera_get_polarization_spectrum(void) {
+	if (intensity_polarization_spectrum != NULL)
+		return intensity_polarization_spectrum();
+	else return NULL;
+}
 
 /* Debugging functions */
 void print_intersections(int tindex, double *x, double *y, double x0, double y0, double a, double b, double cosxi, double sinxi, long long int counter, double cms, step_data *sd, double xhit, double yhit, double ola, double cosphi) {

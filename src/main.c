@@ -192,7 +192,8 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 	/* Prepare to compute the Jacobian */
 	if (usetool->require_jacobian) {
 		double r0[3], *tr0;
-		r0[0] = p->r0[0] + 0.5*particles_get_drho();
+		//r0[0] = p->r0[0] + particles_get_drho();
+		r0[0] = p->r0[0] + JACOBIAN_ORBIT_STEP;
 		r0[1] = p->r0[1];
 		r0[2] = p->r0[2];
 
@@ -215,7 +216,7 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 	/* Main loop. Loop until the final time has been reached */
 	current_index = 0;
 	double current_time = p->t0,
-		dR_dt, dR_drho, dZ_dt, dZ_drho, Jdtdrho=1;
+		dR_dt, dR_drho, dZ_dt, dZ_drho, Jdtdrho=1, drho = particles_get_drho();
 	int steps = 0;
 
 	pol_lastr = hypot(x,y);
@@ -241,7 +242,9 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 					hypot(solver_object->Z->val[0], solver_object->Z->val[1]);
 			dZ_drho = jacobian_so->Z->val[2] - solver_object->Z->val[2];
 
-			Jdtdrho = fabs(dR_dt*dZ_drho - dZ_dt*dR_drho);
+			Jdtdrho = fabs(dR_dt*dZ_drho - dZ_dt*dR_drho)/JACOBIAN_ORBIT_STEP;
+			if (drho != 0)
+				Jdtdrho *= drho;
 		} else {
 			do {
 				ode_solve(eq->eq, solver_object, current_time);

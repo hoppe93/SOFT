@@ -5,7 +5,7 @@
 #include "sycamera.h"
 
 void sphere_init(
-	enum sycamera_radiation_type radt, enum sycamera_polarization_type polt,
+	enum sycamera_radiation_type radt,
 	double *lambdas, int spectrum_resolution, int integral_resolution
 ) {}
 

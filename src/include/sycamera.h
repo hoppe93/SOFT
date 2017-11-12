@@ -55,12 +55,6 @@ enum sycamera_radiation_type {
 #define MAP_PARTICLES_REALLOC_SIZE 1000
 #define MAP_PIXELS_REALLOC_SIZE 10
 
-enum sycamera_polarization_type {
-	SYCAMERA_POLARIZATION_BOTH,
-	SYCAMERA_POLARIZATION_PARALLEL,
-	SYCAMERA_POLARIZATION_PERPENDICULAR
-};
-
 /* Shared variables */
 extern vector *ddet, *e1, *e2, *Rdet;
 extern double rdet, visang, sycamera_zeff;
@@ -77,6 +71,11 @@ extern const double sycamera_pdist_lookup_int1[];
 extern const double sycamera_pdist_lookup_int2[];
 extern const double sycamera_pdist_lookup_omega[];
 
+extern const int sycamera_pdist_spec_lookup_count;
+extern const double sycamera_pdist_spec_lookup_f1[];
+extern const double sycamera_pdist_spec_lookup_f2[];
+extern const double sycamera_pdist_spec_lookup_xi[];
+
 /* Functions required by SOFT */
 void sycamera_init(struct general_settings*, struct general_settings*, int);
 void sycamera_init_run(unsigned int);
@@ -90,7 +89,7 @@ void sycamera_output(equation*);
 
 /* Functions specific to the detector */
 int cone_delta_can_radiation_hit(step_data*, vector*);
-void cone_delta_init(enum sycamera_radiation_type, enum sycamera_polarization_type, double*, int, int);
+void cone_delta_init(enum sycamera_radiation_type, double*, int, int);
 void cone_delta_init_run(void);
 void cone_delta_init_particle(particle*);
 void cone_delta_init_step(step_data*);
@@ -103,7 +102,7 @@ double *cone_delta_get_wavelengths(void);
 double *cone_delta_get_spectrum(void);
 int cone_delta_get_spectrum_length(void);
 
-void cone_dist_init(enum sycamera_radiation_type, enum sycamera_polarization_type, double*, int, int);
+void cone_dist_init(enum sycamera_radiation_type, double*, int, int);
 void cone_dist_init_run(void);
 void cone_dist_init_particle(particle*);
 void cone_dist_init_step(step_data*);
@@ -112,9 +111,17 @@ double cone_dist_Ihat(double, double, double);
 double cone_dist_Ihat_spec(double, double, double);
 double *cone_dist_get_wavelengths(void);
 double *cone_dist_get_spectrum(void);
+double *cone_dist_get_polarization(void);
+double **cone_dist_get_polarization_spectrum(void);
 int cone_dist_get_spectrum_length(void);
+void cone_dist_add_spectrum(double*, double);
+void cone_dist_add_polarization(double*, double);
+void cone_dist_add_polarization_spectrum(double**, double);
+void cone_dist_add_spectrum_and_polarization(double);
+void cone_dist_reset_spectrum(void);
+void cone_dist_reset_polarization(void);
 
-void isotropic_init(enum sycamera_radiation_type, enum sycamera_polarization_type, double*, int, int);
+void isotropic_init(enum sycamera_radiation_type, double*, int, int);
 void isotropic_init_run(void);
 void isotropic_init_particle(particle*);
 void isotropic_init_step(step_data*);
@@ -123,7 +130,7 @@ double *isotropic_get_wavelengths(void);
 double *isotropic_get_spectrum(void);
 int isotropic_get_spectrum_length(void);
 
-void sphere_init(enum sycamera_radiation_type, enum sycamera_polarization_type, double*, int, int);
+void sphere_init(enum sycamera_radiation_type, double*, int, int);
 void sphere_init_run(void);
 void sphere_init_particle(particle*);
 void sphere_init_step(step_data*);
@@ -159,15 +166,22 @@ void sycamera_pas2_init(double, double, int);
 int sycamera_pas2_valid(double, double, double, double);
 double sycamera_pas2_int(void);
 
-void sycamera_pdist_init(double, double, enum sycamera_polarization_type);
+void sycamera_pdist_init(double, double, int);
 void sycamera_pdist_init_run(void);
 void sycamera_pdist_init_particle(double);
-double sycamera_pdist_int(double, double, double, double, double, double, double, double, double, double, double);
+double sycamera_pdist_int(double, double, double, double, double, double, double, double, double, double, double, double, double);
 void sycamera_pdist_test(void);
+double *sycamera_pdist_get_spectrum(void);
+double *sycamera_pdist_get_polarization(void);
+double **sycamera_pdist_get_polarization_spectrum(void);
+double *sycamera_pdist_get_wavelengths(void);
+int sycamera_pdist_get_spectrum_length(void);
 
 double *sycamera_get_spectrum(void);
 double *sycamera_get_wavelengths(void);
 int sycamera_get_spectrum_length(void);
+double *sycamera_get_polarization(void);
+double **sycamera_get_polarization_spectrum(void);
 
 /* Output functions */
 //void sycamera_image_output(const char*, camera_image*, int);

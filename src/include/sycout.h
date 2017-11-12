@@ -11,12 +11,13 @@
 
 enum sycout_mpiid {
 	SYCOUT_MPIID_GENERAL,
+	SYCOUT_MPIID_GREEN,
 	SYCOUT_MPIID_IMAGE,
-	//SYCOUT_MPIID_MAP,
-	SYCOUT_MPIID_TOPVIEW,
+	SYCOUT_MPIID_POLIMAGE,
+	SYCOUT_MPIID_POLSPECTROMETER,
 	SYCOUT_MPIID_SPACE3D,
 	SYCOUT_MPIID_SPECTROMETER,
-	SYCOUT_MPIID_GREEN
+	SYCOUT_MPIID_TOPVIEW
 };
 
 struct sycout_data {
@@ -25,6 +26,7 @@ struct sycout_data {
 	double differential;/* Differential element */
 	double RdPhi;		/* Toroidal differential element */
 	double Jdtdrho;		/* Poloidal trajectory differential */
+	double Jp;			/* Momentum-space jacobian */
 	double particle_diffel;/* Particle differential element */
 	double distribution_function;/* Distribution function evaluated in current point */
     double i, j;           /* Pixel indices */
@@ -92,31 +94,22 @@ void sycout_image_output(sFILE*, camera_image*);
 void sycout_image_write(int, int);
 
 /****************************
- *        MAP SYCOUT        *
+ *  POLARIZED IMAGE SYCOUT  *
  ****************************/
-/*
 typedef struct {
-	int *i, *j;			/ * Pixel "indices", on the interval [0,1] * /
-	double *power;		/ * Power value (one per pixel) * /
-	double *x, *y, *z;	/ * Positions from which radiation is emitted and hits * /
-	int pixels;			/ * Number of pixels which the particle is detected in * /
-	double r;			/ * Particle position * /
-	double ppar, pperp;	/ * Particle momentum * /
-} map_particle;
+	double **Alr2, **Aud2,
+		   **ARe, **AIm;
+	int pixels;
+} camera_polimage;
 
-typedef struct {
-	map_particle **particles;	/ * List of particles (one for each thread) * /
-	int *nparts;				/ * Number of particles (one per thread) * /
-	int n;						/ * Number of particle lists * /
-} camera_map;
-
-void sycout_map_deinit_run(void);
-void sycout_map_init(struct general_settings*);
-void sycout_map_init_run(void);
-void sycout_map_init_particle(particle*);
-void sycout_map_step(struct sycout_data*);
-void sycout_map_write(int, int);
-*/
+void sycout_polimage_deinit_run(void);
+void sycout_polimage_init(struct general_settings*);
+void sycout_polimage_init_run(void);
+void sycout_polimage_init_particle(particle*);
+void sycout_polimage_step(struct sycout_data*);
+void sycout_polimage_combine(sFILE*, camera_polimage*);
+void sycout_polimage_output(sFILE*, camera_polimage*);
+void sycout_polimage_write(int, int);
 
 /****************************
  *      TOPVIEW SYCOUT      *
@@ -176,12 +169,21 @@ void sycout_space3d_write(int, int);
 /****************************
  *   SPECTROMETER SYCOUT    *
  ****************************/
-
 void sycout_spectrometer_deinit_run(void);
 void sycout_spectrometer_init(struct general_settings*);
 void sycout_spectrometer_init_run(void);
 void sycout_spectrometer_init_particle(particle*);
 void sycout_spectrometer_step(struct sycout_data*);
 void sycout_spectrometer_write(int, int);
+
+/****************************
+ *   SPECTROMETER SYCOUT    *
+ ****************************/
+void sycout_polspectrometer_deinit_run(void);
+void sycout_polspectrometer_init(struct general_settings*);
+void sycout_polspectrometer_init_run(void);
+void sycout_polspectrometer_init_particle(particle*);
+void sycout_polspectrometer_step(struct sycout_data*);
+void sycout_polspectrometer_write(int, int);
 
 #endif/*_SYCOUT_H*/

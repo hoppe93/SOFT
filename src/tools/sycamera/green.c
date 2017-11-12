@@ -321,11 +321,11 @@ void sycout_green_step(struct sycout_data *data) {
 	}
 
 	/* Compute differential element */
-	double diffel = data->RdPhi * data->Jdtdrho;
+	double diffel = data->RdPhi * data->Jdtdrho * data->Jp;
 	if (sycout_green_weighWdf) diffel *= data->distribution_function;
-	if (sycout_green_hasrho) diffel /= fabs(particles_get_drho());
-	if (!sycout_green_hasvel1) diffel *= fabs(particles_get_dvel1());
-	if (!sycout_green_hasvel2) diffel *= fabs(particles_get_dvel2());
+	if (sycout_green_hasrho && particles_get_drho() != 0) diffel /= fabs(particles_get_drho());
+	if (!sycout_green_hasvel1 && particles_get_dvel1() != 0) diffel *= fabs(particles_get_dvel1());
+	if (!sycout_green_hasvel2 && particles_get_dvel2() != 0) diffel *= fabs(particles_get_dvel2());
 
 	/* Set value of Green's function */
 	if (sycout_green_haswav) {

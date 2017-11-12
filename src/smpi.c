@@ -45,6 +45,18 @@ void smpi_wor(int tag) {
 	}
 }
 
+long long int smpi_receive_integer(int sender, int tag) {
+	int err;
+	long long int val;
+
+	if ((err=MPI_Recv(&val, 1, MPI_LONG_LONG_INT, sender, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE))!=MPI_SUCCESS) {
+		fprintf(stderr, "MPI ERROR %d: Failed to receive integer from process %d over MPI. Aborting...\n", err, sender);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
+
+	return val;
+}
+
 /**
  * Receive a matrix (double array) from
  * the process with index 'destination' over MPI.
@@ -72,6 +84,23 @@ void smpi_receive_matrix(double *matrix, size_t elements, int sender, int tag) {
 }
 
 /**
+ * Send integer value to process
+ * with index 'destination' over MPI.
+ *
+ * value: Integer value to send
+ * destination: Destination process ID
+ * tag: MPI tag to use
+ */
+void smpi_send_integer(long long int value, int destination, int tag) {
+	int err;
+
+	if ((err=MPI_Send(&value, 1, MPI_LONG_LONG_INT, destination, tag, MPI_COMM_WORLD))!=MPI_SUCCESS) {
+		fprintf(stderr, "MPI ERROR %d: Faield to send integer over MPI to process %d. Aborting...\n", err, destination);
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}
+}
+
+/**
  * Send a matrix (double array) to process
  * with index 'destination' over MPI.
  *
@@ -84,9 +113,8 @@ void smpi_receive_matrix(double *matrix, size_t elements, int sender, int tag) {
  * destination: MPI rank of receing process.
  */
 void smpi_send_matrix(double *matrix, size_t elements, int destination, int tag) {
-	int rank, err, chunksize = INT_MAX, tosend;
+	int err, chunksize = INT_MAX, tosend;
 	size_t sent = 0;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	while (sent < elements) {
 		if (elements-sent > (size_t)chunksize) tosend = chunksize;

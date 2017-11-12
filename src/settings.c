@@ -446,6 +446,7 @@ void settings_init(const char *filename) {
 	FILE *f;
 	const int BUFFER_SIZE=256;
 	int i, n;
+	size_t r;
 
 	/* Open settings file */
 	if (filename != NULL) {
@@ -462,7 +463,8 @@ void settings_init(const char *filename) {
 		size_t fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);
 		settings_file = malloc(fsize+1);
-		fread(settings_file, sizeof(char), fsize, f);
+		r=fread(settings_file, sizeof(char), fsize, f);
+		if (r != fsize) {fprintf(stderr, "ERROR: Error while reading '%s'.\n", filename);perror("ERROR");exit(-1);}
 		fclose(f);
 		settings_file[fsize] = 0;
 	} else {

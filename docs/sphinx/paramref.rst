@@ -350,6 +350,8 @@ coupled to the ``sycamera`` tool of SOFT. Currently the following sycouts are av
 
 * **green** -- Generates a Green's function
 * **image** -- Generates a camera image 
+* **polimage** -- Generates a camera image with polarization information
+* **polspectrometer** -- Generates a spectrum with polarization information
 * **space3d** -- Stores 3D information about the contributions to an image
 * **spectrometer** -- Generates a spectrum
 * **topview** -- Stores X and Y coordinates of contributions to an image. Creates a top-down "map" of contributions.

@@ -25,7 +25,7 @@ enum sycamera_radiation_type cone_delta_radiation_type=SYCAMERA_RADIATION_SYNCHR
 #pragma omp threadprivate(Pn,Pnx,Pne1r,Pne2r,absPne1r,absPne2r)
 
 void cone_delta_init(
-	enum sycamera_radiation_type radt, enum sycamera_polarization_type polt,
+	enum sycamera_radiation_type radt,
 	double *lambdas, int spectrum_resolution, int integral_resolution
 ) {
 	cone_delta_radiation_type = radt;
@@ -51,11 +51,6 @@ void cone_delta_init(
 			exit(-1);
 		}
 		sycamera_bsspec_init(lambdas[0], lambdas[1], spectrum_resolution);
-	}
-
-	if (polt != SYCAMERA_POLARIZATION_BOTH) {
-		fprintf(stderr, "ERROR: The cone model has no support for polarized radiation.\n");
-		exit(-1);
 	}
 }
 void cone_delta_init_run(void) {

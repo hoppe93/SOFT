@@ -50,7 +50,7 @@ void sycout_spectrometer_init_run(void) {
 
 	for (i = 0; i < sycout_spectrometer_nlambdas; i++) {
 		sycout_spectrometer_lwavelengths[i] = lambdas[i];
-		sycout_spectrometer_lresult[i] = 0;
+		sycout_spectrometer_lresult[i] = 0.0;
 	}
 }
 
@@ -65,7 +65,7 @@ void sycout_spectrometer_deinit_run(void) {
 			sycout_spectrometer_wavelengths = malloc(sizeof(double)*sycout_spectrometer_nlambdas);
 
 			for (i = 0; i < sycout_spectrometer_nlambdas; i++) {
-				sycout_spectrometer_result[i] = 0;
+				sycout_spectrometer_result[i] = 0.0;
 				sycout_spectrometer_wavelengths[i] = sycout_spectrometer_lwavelengths[i];
 			}
 		}
@@ -119,7 +119,8 @@ void sycout_spectrometer_output(FILE *f, double *wavelengths, double *spectrum, 
 void sycout_spectrometer_normalize(double *spectrum, int n) {
 	int i;
 	for (i = 0; i < n; i++) {
-		spectrum[i] /= (double)sycout_spectrometer_counts;
+		if (sycout_spectrometer_counts > 0)
+			spectrum[i] /= (double)sycout_spectrometer_counts;
 	}
 }
 
@@ -155,7 +156,7 @@ void sycout_spectrometer_write(int mpi_rank, int nprocesses) {
 #ifdef USE_MPI
 	if (mpi_rank == nprocesses-1) {
 #endif
-	sycout_spectrometer_normalize(sycout_spectrometer_result, sycout_spectrometer_nlambdas);
+	//sycout_spectrometer_normalize(sycout_spectrometer_result, sycout_spectrometer_nlambdas);
 #ifdef USE_MPI
 	}
 #endif
