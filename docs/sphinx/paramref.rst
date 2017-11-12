@@ -551,7 +551,58 @@ to an image. *Will be described in more detail in a separate section*
 
 spectrometer
 ^^^^^^^^^^^^
+The ``spectrometer`` sycout stores spectra.
+
+.. option:: name
+
+   | **Default value:** None
+   | **Example line:** ``name=spectrum.mat``
+   | **Allowed values:** Any string allowed by the file system
+
+   Name of the output file.
 
 topview
 ^^^^^^^
+The ``topview`` sycout generates a top map of the tokamak, showing where in
+the xy-plane radiation comes from. Note that the image is line-integrated along
+the z direction, and bright areas in the top view therefore do not necessarily
+correspond to bright areas in the image.
+
+.. option:: brightness
+
+   | **Default value:** ``intensity``
+   | **Example line:** ``brightness=histogram``
+   | **Allowed values:** ``bw``, ``histogram``, ``intensity``
+
+   Specifies how pixels should be colored. With ``bw`` (for black-and-white), pixels are
+   simply marked if they receive a contribution. Thus, if any radiation hits the pixel
+   during the run, the pixel will contain the value 1 at the end of the run and 0 otherwise.
+
+   The ``histogram`` option specifies that each hit in a pixel should increase the value
+   of the pixel by 1. The radiation intensity reaching the pixel is not considered.
+
+   The ``intensity`` option takes the emitted radiation intensity into account, including
+   spectral effects (if enabled through other options).
+
+.. option:: name
+
+   | **Default value:** None
+   | **Example line:** ``name=output-file.mat``
+   | **Allowed values:** Any string allowed by the underlying file system
+
+   Specifies the name of the file to which the output will be written. The output
+   is written through the SOFT file interface which means it will be either in
+   a HDF5 file, a Matlab MAT file or a SOFT SDT (Self-Descriptive Text) format.
+   The file format is determined based on the filename extension. For HDF5, use
+   either *.h5* or *.hdf5*, for Matlab MAT use *.mat*, and for SDT any other extension
+   (though *.sdt* is recommended).
+
+.. option:: pixels
+
+   | **Default value:** None
+   | **Example line:** ``pixels=300``
+   | **Allowed values:** Any positive integer
+
+   Sets the number of pixels in the topview. Topviews are always square and have the same
+   number of pixels in the x (i) direction as in the y (j) direction.
 
