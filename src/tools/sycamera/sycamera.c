@@ -387,6 +387,9 @@ void sycamera_register_radiation(double i, double j, step_data *sd, double inten
 
 	if (sycamera_has_distfunc)
 		data.distribution_function *= sycamera_distfunc_weight;
+	else {
+		data.distribution_function /= particles_get_differential_factor_current();
+	}
 
 	data.i = i;
 	data.j = j;

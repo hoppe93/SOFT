@@ -72,6 +72,7 @@ void particles_params2p(double, double, double*, double*, double*);
 particle *particles_generate(void);
 particle *particles_generate_at(double, double, double);
 double *particles_get_bounds(void);
+double particles_get_differential_factor_current(void);
 double particles_get_drho(void);
 double particles_get_dvel1(void);
 double particles_get_dvel2(void);

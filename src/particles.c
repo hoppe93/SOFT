@@ -48,7 +48,8 @@ int particles_g_r=0, particles_g_param1=0, particles_g_param2=0,
 time_t particles_lastprogress=0;
 
 /* Pre-computed differential element */
-double particles_diffel, particles_rinner, particles_router;
+double particles_diffel, particles_rinner, particles_router,
+	   particles_diffactor;
 
 enum particles_generation_type particles_gentype=PARTICLES_GT_EVEN;
 
@@ -67,7 +68,8 @@ struct particles_paramspec params[NPARAMS] = {
 	particles_param20,particles_param21,particles_rend,particles_count,particles_param1end,particles_param2end, \
 	particles_r,particles_param1,particles_param2,particles_dr,particles_dparam1,particles_dparam2, \
 	particles_done,particles_param1spec,particles_param2spec,particles_diffel,particles_gentype, \
-	particles_rcoord, particles_rinner, particles_router,particles_curr_r,particles_curr_param1,particles_curr_param2)
+	particles_rcoord, particles_rinner, particles_router,particles_curr_r,particles_curr_param1, \
+	particles_curr_param2, particles_diffactor)
 
 void particles_set_param(double val0, double val1, int n, enum particles_inputtype type) {
 	int i;
@@ -389,49 +391,58 @@ int particles_stop_condition(void) {
 	else return particles_g_done;
 }
 
+double particles_get_differential_factor_current(void) {
+	return particles_diffactor;
+}
+double particles_get_differential_factor(double param1, double param2) {
+	double m = particles_part->mass, c = LIGHTSPEED;
+
+	switch (particles_param1spec->type) {
+		case PARTICLES_COSPITCH:
+			if (particles_param2spec->type == PARTICLES_E) return m*m*c * param1*param1 * param2*sqrt(param2*param2/(m*m*c*c*c*c)-1);
+			else if (particles_param2spec->type == PARTICLES_P) return param2*param2;
+			break;
+		case PARTICLES_E:
+			if (particles_param2spec->type == PARTICLES_COSPITCH) return m*m*c * param2*param2 * param1*sqrt(param1*param1/(m*m*c*c*c*c)-1);
+			else if (particles_param2spec->type == PARTICLES_PPAR) return /* XXX */1;
+			else if (particles_param2spec->type == PARTICLES_PPERP) return /* XXX */1;
+			else if (particles_param2spec->type == PARTICLES_PITCH) return /* XXX */1;
+			break;
+		case PARTICLES_P:
+			if (particles_param2spec->type == PARTICLES_COSPITCH) return param1*param1;
+			else if (particles_param2spec->type == PARTICLES_PITCH) return param1*param1 * sin(param2);
+			else if (particles_param2spec->type == PARTICLES_PPAR) return param1;
+			else if (particles_param2spec->type == PARTICLES_PPERP) return param1*param2 / sqrt(param1*param1 - param2*param2);
+			break;
+		case PARTICLES_PITCH:
+			if (particles_param2spec->type == PARTICLES_E) return /* XXX */1;
+			else if (particles_param2spec->type == PARTICLES_P) return param2*param2 * sin(param1);
+			break;
+		case PARTICLES_PPAR:
+			if (particles_param2spec->type == PARTICLES_E) return /* XXX */1;
+			else if (particles_param2spec->type == PARTICLES_PPERP) return param2;
+			else if (particles_param2spec->type == PARTICLES_P) return param2;
+			break;
+		case PARTICLES_PPERP:
+			if (particles_param2spec->type == PARTICLES_E) return /* XXX */1;
+			else if (particles_param2spec->type == PARTICLES_PPERP) return param1;
+			else if (particles_param2spec->type == PARTICLES_P) return param1*param2 / sqrt(param2*param2 - param1*param1);
+			break;
+		default: break;
+	}
+
+	return 1;
+}
+
 /**
  * Computes the determinant of the Jacobian for the
  * current particle (i.e. the integral differential element).
  */
 double particles_get_differential_element(double param1, double param2) {
 	double dV = particles_diffel;
-	double m = particles_part->mass, c = LIGHTSPEED;
+	particles_diffactor = particles_get_differential_factor(param1, param2);
 
-	switch (particles_param1spec->type) {
-		case PARTICLES_COSPITCH:
-			if (particles_param2spec->type == PARTICLES_E) dV *= m*m*c * param1*param1 * param2*sqrt(param2*param2/(m*m*c*c*c*c)-1);
-			else if (particles_param2spec->type == PARTICLES_P) dV *= param2*param2;
-			break;
-		case PARTICLES_E:
-			if (particles_param2spec->type == PARTICLES_COSPITCH) dV *= m*m*c * param2*param2 * param1*sqrt(param1*param1/(m*m*c*c*c*c)-1);
-			else if (particles_param2spec->type == PARTICLES_PPAR) dV *= /* XXX */1;
-			else if (particles_param2spec->type == PARTICLES_PPERP) dV *= /* XXX */1;
-			else if (particles_param2spec->type == PARTICLES_PITCH) dV *= /* XXX */1;
-			break;
-		case PARTICLES_P:
-			if (particles_param2spec->type == PARTICLES_COSPITCH) dV *= param1*param1;
-			else if (particles_param2spec->type == PARTICLES_PITCH) dV *= param1*param1 * sin(param2);
-			else if (particles_param2spec->type == PARTICLES_PPAR) dV *= param1;
-			else if (particles_param2spec->type == PARTICLES_PPERP) dV *= param1*param2 / sqrt(param1*param1 - param2*param2);
-			break;
-		case PARTICLES_PITCH:
-			if (particles_param2spec->type == PARTICLES_E) dV *= /* XXX */1;
-			else if (particles_param2spec->type == PARTICLES_P) dV *= param2*param2 * sin(param1);
-			break;
-		case PARTICLES_PPAR:
-			if (particles_param2spec->type == PARTICLES_E) dV *= /* XXX */1;
-			else if (particles_param2spec->type == PARTICLES_PPERP) dV *= param2;
-			else if (particles_param2spec->type == PARTICLES_P) dV *= param2;
-			break;
-		case PARTICLES_PPERP:
-			if (particles_param2spec->type == PARTICLES_E) dV *= /* XXX */1;
-			else if (particles_param2spec->type == PARTICLES_PPERP) dV *= param1;
-			else if (particles_param2spec->type == PARTICLES_P) dV *= param1*param2 / sqrt(param2*param2 - param1*param1);
-			break;
-		default: break;
-	}
-
-	return dV;
+	return dV * particles_diffactor;
 }
 
 /**
