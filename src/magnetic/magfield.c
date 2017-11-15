@@ -54,7 +54,9 @@ magfield_t *magfield_load(const char *filename, enum sfile_type ftype) {
 	}
 
 	s = sfile_init(ftype);
-	s->open(s, filename, SFILE_MODE_READ);
+	if (!s->open(s, filename, SFILE_MODE_READ)) {
+		exit(-1);
+	}
 
 	data->name = s->get_string(s, "name");
 	data->desc = s->get_string(s, "desc");

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ctsv.h"
 #include "IO_data.h"
 #include "quantities.h"
@@ -21,7 +22,15 @@ void ctsv_write(char *filename, char type, solution_data* data, particle *p) {
 	 * Test function for this module
 	 */
 	FILE *fp;
-	fp = fopen(filename, "w");
+	int closefp = 1;
+
+	if (filename[0] == '@' && !strcmp(filename, "@stdout")) {
+		fp = stdout;
+		closefp = 0;
+	} else if (filename[0] == '@' && !strcmp(filename, "@stderr")) {
+		fp = stderr;
+		closefp = 0;
+	} else fp = fopen(filename, "w");
 
 	if (fp == NULL) {
 		perror("ERROR");
@@ -75,7 +84,8 @@ void ctsv_write(char *filename, char type, solution_data* data, particle *p) {
 		fprintf(fp, "\n");
 	}
 
-	fclose(fp);
+	if (closefp)
+		fclose(fp);
 }
 
 void ctsv_test(void) {
