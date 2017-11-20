@@ -73,9 +73,9 @@ void equation_particle_rel_init_run(particle *part, ode_solution *solver_object)
 		solver_object->Z->val[0] = part->r0[0] + rho[0];
 		solver_object->Z->val[1] = part->r0[1] + rho[1];
 		solver_object->Z->val[2] = part->r0[2] + rho[2];
-		solver_object->Z->val[3] = pparabs*bx + pperp[0];
-		solver_object->Z->val[4] = pparabs*by + pperp[1];
-		solver_object->Z->val[5] = pparabs*bz + pperp[2];
+		solver_object->Z->val[3] = pparabs*bx - pperp[0];
+		solver_object->Z->val[4] = pparabs*by - pperp[1];
+		solver_object->Z->val[5] = pparabs*bz - pperp[2];
 	} else {
 		solver_object->Z->val[0] = part->r0[0];
 		solver_object->Z->val[1] = part->r0[1];
