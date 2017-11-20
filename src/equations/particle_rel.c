@@ -33,12 +33,55 @@ void equation_particle_rel_init_run(particle *part, ode_solution *solver_object)
 	double v2 = vx*vx + vy*vy + vz*vz;
 	double gamma = 1/sqrt(1-v2/(c*c));
 
-	solver_object->Z->val[0] = part->r0[0];
-	solver_object->Z->val[1] = part->r0[1];
-	solver_object->Z->val[2] = part->r0[2];
-	solver_object->Z->val[3] = part->v0[0]*part->mass*gamma;
-	solver_object->Z->val[4] = part->v0[1]*part->mass*gamma;
-	solver_object->Z->val[5] = part->v0[2]*part->mass*gamma;
+	if (part->gc_position) {
+		vector *B = magnetic_field_get(part->r0[0], part->r0[1], part->r0[2]);
+		double rho[3], bx, by, bz, Babs,
+			   a[3], c[3], aabs, sn, cs,
+			   rhoabs, pperp[3], pabs2,
+			   pperpabs, pparabs;
+
+		Babs = vnorm3(B);
+		bx = B->val[0] / Babs;
+		by = B->val[1] / Babs;
+		bz = B->val[2] / Babs;
+
+		aabs = hypot(bx, by);
+		a[0] = by / aabs;
+		a[1] =-bx / aabs;
+		a[2] = 0;
+
+		c[0] = a[1]*bz;	/* a[2] = 0 */
+		c[1] =-a[0]*bz;	/* - " - */
+		c[2] = a[0]*by - a[1]*bx;
+
+		sn = sin(part->zeta0), cs = cos(part->zeta0);
+		pabs2 = part->v0[0]*part->v0[0] + part->v0[1]*part->v0[1] + part->v0[2]*part->v0[2];
+		pparabs = part->v0[0]*bx + part->v0[1]*by + part->v0[2]*bz;
+		pperpabs = sqrt(pabs2 - pparabs*pparabs);
+
+		rhoabs = fabs(pperpabs / (part->charge * Babs));
+		rho[0] = rhoabs * (a[0]*cs + c[0]*sn);
+		rho[1] = rhoabs * (a[1]*cs + c[1]*sn);
+		rho[2] = rhoabs * (a[2]*cs + c[2]*sn);
+
+		pperp[0] = pperpabs * (c[0]*cs - a[0]*sn);
+		pperp[1] = pperpabs * (c[1]*cs - a[1]*sn);
+		pperp[2] = pperpabs * (c[2]*cs - a[2]*sn);
+
+		solver_object->Z->val[0] = part->r0[0] + rho[0];
+		solver_object->Z->val[1] = part->r0[1] + rho[1];
+		solver_object->Z->val[2] = part->r0[2] + rho[2];
+		solver_object->Z->val[3] = pparabs*bx + pperp[0];
+		solver_object->Z->val[4] = pparabs*by + pperp[1];
+		solver_object->Z->val[5] = pparabs*bz + pperp[2];
+	} else {
+		solver_object->Z->val[0] = part->r0[0];
+		solver_object->Z->val[1] = part->r0[1];
+		solver_object->Z->val[2] = part->r0[2];
+		solver_object->Z->val[3] = part->v0[0]*part->mass*gamma;
+		solver_object->Z->val[4] = part->v0[1]*part->mass*gamma;
+		solver_object->Z->val[5] = part->v0[2]*part->mass*gamma;
+	}
 }
 
 /**

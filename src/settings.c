@@ -157,6 +157,7 @@ void settings_init_particle(particle *p) {
 	p->vpar		= default_particle->vpar;
 	p->vperp	= default_particle->vperp;
 	p->gc_position = 1;
+	p->zeta0    = 0.0;
 
 	if (default_particle->v0 != NULL) {
 		p->v0 = malloc(sizeof(double)*3);
@@ -342,6 +343,7 @@ settings *settings_interpret() {
 				p->gc_position = 1;
 				p->mass = 0.000548579909 * AMU_TO_KG;
 				p->charge = -CHARGE;
+				p->zeta0 = 0.0;
 
 				double db[3];
 
@@ -416,6 +418,8 @@ settings *settings_interpret() {
 							p->gentype = PARTICLES_GT_QUEUE;
 						} else if (!strcmp(tkn->val, "even"))
 							p->gentype = PARTICLES_GT_EVEN;
+					} else if (!strcmp(name, "zeta")) {
+						p->zeta0 = atof(tkn->val);
 					} else {
 						fprintf(stderr, "ERROR: Unexpected particle setting: '%s'!\n", name);
 						exit(-1);

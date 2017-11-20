@@ -73,22 +73,28 @@ int stop_condition(double t, double tend, double r0, double r, double z0, double
 		/* If we go above -tend we should cancel */
 		if (t > -tend) return 1;
 
+		/* Count number of times the particle passes
+		 * the r=r0 and z=z0 lines respectively
+		 * (where r0,z0 is the particle's initial position) */
 		if ((pol_lastr < r0 && r0 < r) ||
-			(pol_lastr > r0 && r0 > r))
+			(pol_lastr > r0 && r0 > r)) {
 			pol_rpass++;
+		}
 
 		if ((pol_lastz < z0 && z0 < z) ||
 			(pol_lastz > z0 && z0 > z)) {
 			pol_zpass++;
 		}
 
+		/* If the particle hasn't moved since last timestep... */
 		if (pol_lastr == r && pol_lastz == z)
 			pol_rest++;
 
 		/* We do this to prevent particle's at rest from
 		 * stopping execution */
 		int ret = (pol_rest >= 2);
-		if (pol_rpass >= 2 || pol_zpass >= 2) {
+		//if (pol_rpass >= 2 || pol_zpass >= 2) {
+		if (pol_zpass >= 2) {
 			/*if (pol_trapped || fabs(r0-r) > fabs(pol_lastr-r) || fabs(z0-z) > fabs(pol_lastz-z)) {
 				pol_trapped = 1;
 				ret = (pol_rpass >= 4 || pol_zpass >= 4);
@@ -206,22 +212,21 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 		p->r0 = tr0;
 	}
 
-	/*
-	double v2 = p->v0[0]*p->v0[0] + p->v0[1]*p->v0[1] + p->v0[2]*p->v0[2];
-	double gamma = 1 / sqrt(1 - v2 / (299792458.0*299792458.0));
-	double ma = particles_find_axis_r(gamma*p->mass*p->vpar, gamma*p->mass*p->vperp, 0.84, 0.6);
-	printf("Magnetic axis = %e\n", ma);
-	*/
-
 	/* Main loop. Loop until the final time has been reached */
 	current_index = 0;
 	double current_time = p->t0,
 		dR_dt, dR_drho, dZ_dt, dZ_drho, Jdtdrho=1, drho = particles_get_drho();
 	int steps = 0;
 
+	/* Since the equation used may displace the solver object slightly (such as if we're
+	 * following a GC orbit and specify the particle position), we should use 'solver_object->Z->val[...]'
+	 * instead of 'p->r0[...]' to calculate the initial particle position */
+	x = solver_object->Z->val[0];
+	y = solver_object->Z->val[1];
+	z = solver_object->Z->val[2];
 	pol_lastr = hypot(x,y);
 	pol_lastz = z;
-	double r0 = hypot(p->r0[0], p->r0[1]), z0 = p->r0[2];
+	double r0 = pol_lastr, z0 = pol_lastz;
 	while (!stop_condition(current_time, p->tend, r0, r, z0, solver_object->Z->val[2]) &&
 		   !usetool->stop_condition()) {
 		steps++;
@@ -279,8 +284,11 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 		R[0] = R[1]; Z[0] = Z[1];
 		r = R[1] = hypot(x, y); Z[1] = z;
 		if (domain_check(R, Z) == DOMAIN_OUTSIDE) {
-			printf("Particle collided with device wall!\n");
-			printf("  r = %e\n  z = %e\n", R[1], Z[1]);
+			double v0 = hypot(p->v0[0], hypot(p->v0[1], p->v0[2])),
+				   gm = 1 / sqrt(1 - v0*v0),
+				   p0 = gm * p->mass * v0,
+				   xi0= p->vpar / v0;
+			printf("Particle collided with device wall!  r0 = %e, p0 = %e, xi0 = %e\n", r0, p0, xi0);
 			return_value = EXIT_PARTICLE_OUTSIDE;
 			break;
 		}

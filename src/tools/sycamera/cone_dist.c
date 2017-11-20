@@ -509,7 +509,7 @@ void cone_dist_test(void) {
 	double PPAR = 3e7 * eV2kgms;
 	double PPERP = 5e6 * eV2kgms;
 	
-	particle p = {0,0,9.10938356e-31,1.60217662e-19,0,0,NULL,NULL,0.0,0,0,0,0};
+	particle p = {0,0,9.10938356e-31,1.60217662e-19,0,0,NULL,NULL,0.0,0,0,0,0,0.0};
 	step_data sd;
 	sd.ppar2 = PPAR*PPAR;
 	sd.pperp2 = PPERP*PPERP;

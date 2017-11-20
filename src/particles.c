@@ -177,6 +177,7 @@ void particles_init(struct particlespec *spec) {
 	particles_part->v0 = malloc(sizeof(double)*3);
 	particles_part->r0 = malloc(sizeof(double)*3);
 	particles_part->gc_position = spec->gc_position;
+	particles_part->zeta0 = spec->zeta0;
 
 	domain_get_bounds(&particles_router, &particles_rinner, NULL, NULL);
 

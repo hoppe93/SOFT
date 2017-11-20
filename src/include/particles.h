@@ -10,6 +10,7 @@ typedef struct {
 	double vpar, vperp;
 	double *v0;
 	double *r0;
+	double zeta0;		/* Initial gyro-phase to drop the particle at */
 	double diffel;		/* Differential element */
 	int gc_position;	/* If 1, assumes the guiding-center position (rather than particle pos.) to be given */
 	int ir, iv1, iv2;	/* Radial index, velocity 1 & 2 indices */
@@ -57,6 +58,7 @@ struct particlespec {
 	int rn, pparn, pperpn, pitchn, cospitchn, pn;
 	enum particles_radial_coordinate rcoord;/* Type of radial coordinate */
 	int gc_position;			/* Guiding-center position (rather than particle pos.) is given */
+	double zeta0;				/* Initial gyro-phase to drop the particle at */
 };
 
 void particles_init(struct particlespec*);
