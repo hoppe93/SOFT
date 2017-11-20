@@ -1,6 +1,7 @@
 #include <math.h>
 #include <omp.h>
 #include <stdlib.h>
+#include "constants.h"
 #include "equation_particle_rel.h"
 #include "global.h"
 #include "interp2.h"
@@ -56,7 +57,8 @@ void equation_particle_rel_init_run(particle *part, ode_solution *solver_object)
 
 		sn = sin(part->zeta0), cs = cos(part->zeta0);
 		pabs2 = part->v0[0]*part->v0[0] + part->v0[1]*part->v0[1] + part->v0[2]*part->v0[2];
-		pparabs = part->v0[0]*bx + part->v0[1]*by + part->v0[2]*bz;
+		pabs2 = part->mass*part->mass * gamma*gamma * pabs2;
+		pparabs = part->mass*gamma*(part->v0[0]*bx + part->v0[1]*by + part->v0[2]*bz);
 		pperpabs = sqrt(pabs2 - pparabs*pparabs);
 
 		rhoabs = fabs(pperpabs / (part->charge * Babs));
