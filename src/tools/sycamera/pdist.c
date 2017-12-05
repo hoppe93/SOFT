@@ -90,6 +90,7 @@ double sycamera_pdist_int(
 		omegaB = sycamera_pdist_omega_B_factor*Bmag*sqrt(gammai2),
 		cospsi = cosmu*cosp + sinmu*sinp,
 		sinpsi2 = 1-cospsi*cospsi,
+		sinpsi  = sinmu*cosp - cosmu*sinp,
 		bcospsi = beta*cospsi,
 		bcospsi2 = bcospsi/2.0,
 		mcospsi = 1-bcospsi,
@@ -118,7 +119,8 @@ double sycamera_pdist_int(
 	
 	/* Compute integrals */
 	double I13l, I13u, I23l, I23u, I13, I23,
-		   xi2K13, xi2K23, xi, lambda, Apar2, Aperp2,
+		   xi2K13, xi2K23, xi, lambda,
+		   AparAperp2, Apar2, Aperp2,
 		   pT, pol0, pol1, pol2, pol3,
 		   polsin2a=polsina*polsina, polcos2a=polcosa*polcosa;
 
@@ -140,13 +142,14 @@ double sycamera_pdist_int(
 		Aperp2 = pT*mf_spec*xi2K13;
 
 		/* Compute polarization stuff */
-		pol0 = Aperp2*polsin2a + Apar2*polcos2a;	/* |A_{left-right}|^2 */
-		pol1 = Apar2*polcos2a + Apar2*polsin2a;		/* |A_{up-down}|^2 */
-		pol2 = (Aperp2-Apar2)*polsina*polcosa;		/* Re(A_{up-down} x A_{left-right}*) */
+		pol0 = Aperp2 + Apar2;							/* Stokes I */
+		pol1 = (Aperp2 - Apar2) * (polsin2a - polcos2a);/* Stokes Q */
+		pol2 = 2.0*(Aperp2-Apar2)*polsina*polcosa;		/* Stokes U */
 
-		/* Im(A_{up-down} x A_{left-right}*) */
-		if (Apar2*Aperp2 <= 0) pol3 = 0.0;
-		else pol3 = sqrt(Apar2*Aperp2);					
+		/* Stokes V */
+		AparAperp2 = pT*bcospsi/mcospsi*xi2K23*xi2K13;
+		if (AparAperp2 <= 0) pol3 = 0.0;
+		else pol3 = 2.0 * sinpsi * sqrt(AparAperp2) * (polsin2a - polcos2a);					
 
 		sycamera_pdist_polarization[0] += pol0 * sycamera_pdist_dlambda;
 		sycamera_pdist_polarization[1] += pol1 * sycamera_pdist_dlambda;

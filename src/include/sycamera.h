@@ -13,7 +13,8 @@
 #define SOFT_MAGIC 0x50F7
 
 #define SYCAMERA_PCYL_CONSTANT (1/sqrt(3)*LIGHTSPEED*CHARGE*CHARGE/EPS0)
-#define SYCAMERA_PCYL_LOWERBOUND (4*PI/3*LIGHTSPEED/CHARGE)
+#define SYCAMERA_PCYL_POL_CONSTANT (9*sqrt(3)*CHARGE*CHARGE*CHARGE*CHARGE*CHARGE/(64*PI*PI*PI*ELECTRONMASS*ELECTRONMASS*ELECTRONMASS*LIGHTSPEED*LIGHTSPEED*EPS0))
+#define SYCAMERA_PCYL_LAMBDAC_CONST (4*PI/3*LIGHTSPEED/CHARGE)
 
 #define SYCAMERA_PAS2_CONSTANT (sqrt(3)*LIGHTSPEED*CHARGE*CHARGE/(8*PI*EPS0))
 
@@ -65,6 +66,11 @@ extern const int sycamera_pcyl_lookup_count;
 extern const double sycamera_pcyl_lookup_int[];
 extern const double sycamera_pcyl_lookup_lambda[];
 
+/* Lookup tables (pcyl_pol) */
+extern const int sycamera_pcyl_lookup_pol_count;
+extern const double sycamera_pcyl_lookup_pol_int[];
+extern const double sycamera_pcyl_lookup_pol_lambda[];
+
 /* Lookup tables (pdist) */
 extern const int sycamera_pdist_lookup_count;
 extern const double sycamera_pdist_lookup_int1[];
@@ -101,6 +107,8 @@ void cone_delta_register_radiation(double, double, step_data*, double, double, d
 double *cone_delta_get_wavelengths(void);
 double *cone_delta_get_spectrum(void);
 int cone_delta_get_spectrum_length(void);
+double *cone_delta_get_polarization(void);
+double **cone_delta_get_polarization_spectrum(void);
 
 void cone_dist_init(enum sycamera_radiation_type, double*, int, int);
 void cone_dist_init_run(void);
@@ -142,7 +150,8 @@ int sphere_get_spectrum_length(void);
 /* Functions for spectrum weighting */
 void sycamera_spectrum_init(double, double, int);
 void sycamera_spectrum_init_run(void);
-double sycamera_spectrum_weight(step_data*, double, double);
+void sycamera_spectrum_init_step(step_data*);
+double sycamera_spectrum_weight(step_data*, double, double, vector*, vector*);
 double *sycamera_spectrum_get_wavelengths(void);
 double *sycamera_spectrum_get(void);
 int sycamera_spectrum_length(void);
@@ -157,10 +166,13 @@ void sycamera_bsspec_test(void);
 
 void sycamera_pcyl_init(double, double, int);
 void sycamera_pcyl_init_run(void);
-double sycamera_pcyl_int(double, double, double, double, double);
+void sycamera_pcyl_init_step(step_data*);
+double sycamera_pcyl_int(double, double, double, double, double, vector*, vector*);
 double *sycamera_pcyl_get_wavelengths(void);
 double *sycamera_pcyl_get_spectrum(void);
 int sycamera_pcyl_get_spectrum_length(void);
+double *sycamera_pcyl_get_polarization(void);
+double **sycamera_pcyl_get_polarization_spectrum(void);
 
 void sycamera_pas2_init(double, double, int);
 int sycamera_pas2_valid(double, double, double, double);

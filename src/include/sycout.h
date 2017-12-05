@@ -97,8 +97,8 @@ void sycout_image_write(int, int);
  *  POLARIZED IMAGE SYCOUT  *
  ****************************/
 typedef struct {
-	double **Alr2, **Aud2,
-		   **ARe, **AIm;
+	double **StokesI, **StokesQ,
+		   **StokesU, **StokesV;
 	int pixels;
 } camera_polimage;
 
@@ -176,9 +176,9 @@ void sycout_spectrometer_init_particle(particle*);
 void sycout_spectrometer_step(struct sycout_data*);
 void sycout_spectrometer_write(int, int);
 
-/****************************
- *   SPECTROMETER SYCOUT    *
- ****************************/
+/*********************************
+ * POLARIZED SPECTROMETER SYCOUT *
+ *********************************/
 void sycout_polspectrometer_deinit_run(void);
 void sycout_polspectrometer_init(struct general_settings*);
 void sycout_polspectrometer_init_run(void);

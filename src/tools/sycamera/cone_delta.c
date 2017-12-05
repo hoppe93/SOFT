@@ -63,7 +63,7 @@ void cone_delta_init_particle(particle *p) {
 	cone_delta_charge = p->charge;
 	cone_delta_mass = p->mass;
 }
-void cone_delta_init_step(step_data *sd) { }
+void cone_delta_init_step(step_data *sd) {}
 
 /**
  * Computes the intensity detected from one
@@ -108,7 +108,7 @@ double cone_delta_get_intensity(
 
 			totalP *= fraction;
     	} else if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
-    		totalP = sycamera_spectrum_weight(sd, cone_delta_mass, fraction);
+    		totalP = sycamera_spectrum_weight(sd, cone_delta_mass, fraction, rcp, vhat);
     	} else {
     		fprintf(stderr, "ERROR: Unrecognized radiation type selected: %d\n", cone_delta_radiation_type);
     		exit(1);
@@ -675,5 +675,15 @@ int cone_delta_get_spectrum_length(void) {
 	else if (cone_delta_radiation_type == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM)
 		return sycamera_bsspec_get_spectrum_length();
 	else return 0;
+}
+double *cone_delta_get_polarization(void) {
+	if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
+		return sycamera_pcyl_get_polarization();
+	else return NULL;
+}
+double **cone_delta_get_polarization_spectrum(void) {
+	if (cone_delta_radiation_type == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
+		return sycamera_pcyl_get_polarization_spectrum();
+	return NULL;
 }
 

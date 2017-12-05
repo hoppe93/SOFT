@@ -112,7 +112,7 @@ void sycout_polspectrometer_step(struct sycout_data *data) {
 
 void sycout_polspectrometer_output(FILE *f, double *wavelengths, double **spectrum, int n) {
 	int i;
-	fprintf(f, "#wavelength,Alr2,Aud2,ARe,AIm\n");
+	fprintf(f, "#wavelength,I,Q,U,V\n");
 	for (i = 0; i < n; i++) {
 		fprintf(f, "%.12e,%.12e,%.12e,%.12e,%.12e\n", wavelengths[i], spectrum[0][i], spectrum[1][i], spectrum[2][i], spectrum[3][i]);
 	}

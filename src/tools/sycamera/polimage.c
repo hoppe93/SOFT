@@ -43,60 +43,63 @@ void sycout_polimage_init(struct general_settings *settings) {
     }
 
     /* Initialize resulting image */
-	sycout_polimage_result->Alr2 = malloc(sizeof(double*)*sycout_polimage_result->pixels);
-	sycout_polimage_result->Aud2 = malloc(sizeof(double*)*sycout_polimage_result->pixels);
-	sycout_polimage_result->ARe = malloc(sizeof(double*)*sycout_polimage_result->pixels);
-	sycout_polimage_result->AIm = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesI = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesQ = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesU = malloc(sizeof(double*)*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesV = malloc(sizeof(double*)*sycout_polimage_result->pixels);
 
-	sycout_polimage_result->Alr2[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
-	sycout_polimage_result->Aud2[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
-	sycout_polimage_result->ARe[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
-	sycout_polimage_result->AIm[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesI[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesQ[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesU[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
+	sycout_polimage_result->StokesV[0] = malloc(sizeof(double)*sycout_polimage_result->pixels*sycout_polimage_result->pixels);
 
 	for (i = 0; i < sycout_polimage_result->pixels; i++) {
 		if (i > 0) {
-			sycout_polimage_result->Alr2[i] = sycout_polimage_result->Alr2[i-1] + sycout_polimage_result->pixels;
-			sycout_polimage_result->Aud2[i] = sycout_polimage_result->Aud2[i-1] + sycout_polimage_result->pixels;
-			sycout_polimage_result->ARe[i] = sycout_polimage_result->ARe[i-1] + sycout_polimage_result->pixels;
-			sycout_polimage_result->AIm[i] = sycout_polimage_result->AIm[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->StokesI[i] = sycout_polimage_result->StokesI[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->StokesQ[i] = sycout_polimage_result->StokesQ[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->StokesU[i] = sycout_polimage_result->StokesU[i-1] + sycout_polimage_result->pixels;
+			sycout_polimage_result->StokesV[i] = sycout_polimage_result->StokesV[i-1] + sycout_polimage_result->pixels;
 		}
 
 		for (j = 0; j < sycout_polimage_result->pixels; j++) {
-			sycout_polimage_result->Alr2[i][j] = 0;
-			sycout_polimage_result->Aud2[i][j] = 0;
-			sycout_polimage_result->ARe[i][j] = 0;
-			sycout_polimage_result->AIm[i][j] = 0;
+			sycout_polimage_result->StokesI[i][j] = 0;
+			sycout_polimage_result->StokesQ[i][j] = 0;
+			sycout_polimage_result->StokesU[i][j] = 0;
+			sycout_polimage_result->StokesV[i][j] = 0;
 		}
 	}
 }
 void sycout_polimage_init_run(void) {
+	/* Initialize local image */
     int i, j;
 	sycout_polimage_camim = malloc(sizeof(camera_polimage));
 	sycout_polimage_camim->pixels = sycout_polimage_result->pixels;
-	sycout_polimage_camim->Alr2 = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->Aud2 = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->ARe = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AIm = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesI = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesQ = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesU = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesV = malloc(sizeof(double*)*sycout_polimage_camim->pixels);
 
-	sycout_polimage_camim->Alr2[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->Aud2[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->ARe[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
-	sycout_polimage_camim->AIm[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesI[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesQ[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesU[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
+	sycout_polimage_camim->StokesV[0] = malloc(sizeof(double)*sycout_polimage_camim->pixels*sycout_polimage_camim->pixels);
 
 	for (i = 0; i < sycout_polimage_camim->pixels; i++) {
 		if (i > 0) {
-			sycout_polimage_camim->Alr2[i] = sycout_polimage_camim->Alr2[i-1] + sycout_polimage_camim->pixels;
-			sycout_polimage_camim->Aud2[i] = sycout_polimage_camim->Aud2[i-1] + sycout_polimage_camim->pixels;
-			sycout_polimage_camim->ARe[i] = sycout_polimage_camim->ARe[i-1] + sycout_polimage_camim->pixels;
-			sycout_polimage_camim->AIm[i] = sycout_polimage_camim->AIm[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->StokesI[i] = sycout_polimage_camim->StokesI[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->StokesQ[i] = sycout_polimage_camim->StokesQ[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->StokesU[i] = sycout_polimage_camim->StokesU[i-1] + sycout_polimage_camim->pixels;
+			sycout_polimage_camim->StokesV[i] = sycout_polimage_camim->StokesV[i-1] + sycout_polimage_camim->pixels;
 		}
 
-		for (j = 0; j < sycout_polimage_camim->pixels; j++) {
-			sycout_polimage_camim->Alr2[i][j] = 0;
-			sycout_polimage_camim->Aud2[i][j] = 0;
-			sycout_polimage_camim->ARe[i][j] = 0;
-			sycout_polimage_camim->AIm[i][j] = 0;
-		}
+		for (j = 0; j < sycout_polimage_camim->pixels; j++)
+			sycout_polimage_camim->StokesI[i][j] = 0.0;
+		for (j = 0; j < sycout_polimage_camim->pixels; j++)
+			sycout_polimage_camim->StokesQ[i][j] = 0.0;
+		for (j = 0; j < sycout_polimage_camim->pixels; j++)
+			sycout_polimage_camim->StokesU[i][j] = 0.0;
+		for (j = 0; j < sycout_polimage_camim->pixels; j++)
+			sycout_polimage_camim->StokesV[i][j] = 0.0;
 	}
 }
 void sycout_polimage_init_particle(particle *p) {}
@@ -107,10 +110,10 @@ void sycout_polimage_deinit_run(void) {
 		int i, j;
 		for (i = 0; i < sycout_polimage_camim->pixels; i++) {
 			for (j = 0; j < sycout_polimage_camim->pixels; j++) {
-				sycout_polimage_result->Alr2[i][j] += sycout_polimage_camim->Alr2[i][j];
-				sycout_polimage_result->Aud2[i][j] += sycout_polimage_camim->Aud2[i][j];
-				sycout_polimage_result->ARe[i][j] += sycout_polimage_camim->ARe[i][j];
-				sycout_polimage_result->AIm[i][j] += sycout_polimage_camim->AIm[i][j];
+				sycout_polimage_result->StokesI[i][j] += sycout_polimage_camim->StokesI[i][j];
+				sycout_polimage_result->StokesQ[i][j] += sycout_polimage_camim->StokesQ[i][j];
+				sycout_polimage_result->StokesU[i][j] += sycout_polimage_camim->StokesU[i][j];
+				sycout_polimage_result->StokesV[i][j] += sycout_polimage_camim->StokesV[i][j];
 			}
 		}
 	}
@@ -122,14 +125,14 @@ void sycout_polimage_step(struct sycout_data *data) {
     int i = (int)(data->i*sycout_polimage_result->pixels);
     int j = (int)(data->j*sycout_polimage_result->pixels);
 	double *pol = sycamera_get_polarization(),
-			sd = sqrt(data->differential);
+			sd = data->differential;
 	
 	if (pol == NULL) return;
 
-	sycout_polimage_camim->Alr2[j][i] += pol[0] * sd;
-	sycout_polimage_camim->Aud2[j][i] += pol[1] * sd;
-	sycout_polimage_camim->ARe[j][i] += pol[2] * sd;
-	sycout_polimage_camim->AIm[j][i] += pol[3] * sd;
+	sycout_polimage_camim->StokesI[j][i] += pol[0] * sd;
+	sycout_polimage_camim->StokesQ[j][i] += pol[1] * sd;
+	sycout_polimage_camim->StokesU[j][i] += pol[2] * sd;
+	sycout_polimage_camim->StokesV[j][i] += pol[3] * sd;
 }
 
 /**
@@ -144,10 +147,10 @@ void sycout_polimage_output(sFILE *sf, camera_polimage *ci) {
 	sf->write_list(sf, "detectorPosition", Rdet->val, 3);
 	sf->write_list(sf, "detectorDirection", ddet->val, 3);
 	sf->write_list(sf, "detectorVisang", &visang, 1);
-	sf->write_image(sf, "Alr2", ci->Alr2, ci->pixels);
-	sf->write_image(sf, "Aud2", ci->Aud2, ci->pixels);
-	sf->write_image(sf, "ARe", ci->ARe, ci->pixels);
-	sf->write_image(sf, "AIm", ci->AIm, ci->pixels);
+	sf->write_image(sf, "StokesI", ci->StokesI, ci->pixels);
+	sf->write_image(sf, "StokesQ", ci->StokesQ, ci->pixels);
+	sf->write_image(sf, "StokesU", ci->StokesU, ci->pixels);
+	sf->write_image(sf, "StokesV", ci->StokesV, ci->pixels);
 	sf->write_array(sf, "wall", wall, 2, d->n);
 }
 /**
@@ -195,25 +198,25 @@ void sycout_polimage_write(int mpi_rank, int nprocesses) {
 		int i, j;
 		double *tmp = malloc(sizeof(double)*pixels2);
 		for (i = 1; i < nprocesses; i++) {
-			/* Alr2 */
+			/* I */
 			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
 			for (j = 0; j < pixels2; j++)
-				sycout_polimage_result->Alr2[0][j] += tmp[j];
+				sycout_polimage_result->StokesI[0][j] += tmp[j];
 
-			/* Aud2 */
+			/* Q */
 			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
 			for (j = 0; j < pixels2; j++)
-				sycout_polimage_result->Aud2[0][j] += tmp[j];
+				sycout_polimage_result->StokesQ[0][j] += tmp[j];
 
-			/* ARe */
+			/* U */
 			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
 			for (j = 0; j < pixels2; j++)
-				sycout_polimage_result->ARe[0][j] += tmp[j];
+				sycout_polimage_result->StokesU[0][j] += tmp[j];
 
-			/* AIm */
+			/* V */
 			smpi_receive_matrix(tmp, pixels2, i, SYCOUT_MPIID_POLIMAGE);
 			for (j = 0; j < pixels2; j++)
-				sycout_polimage_result->AIm[0][j] += tmp[j];
+				sycout_polimage_result->StokesV[0][j] += tmp[j];
 		}
 		free(tmp);
 
@@ -230,10 +233,10 @@ void sycout_polimage_write(int mpi_rank, int nprocesses) {
 
 #ifdef USE_MPI
 	} else {	/* Else, send data to root process */
-		smpi_send_matrix(sycout_polimage_camim->Alr2[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
-		smpi_send_matrix(sycout_polimage_camim->Aud2[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
-		smpi_send_matrix(sycout_polimage_camim->ARe[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
-		smpi_send_matrix(sycout_polimage_camim->AIm[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->StokesI[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->StokesQ[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->StokesU[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
+		smpi_send_matrix(sycout_polimage_camim->StokesV[0], sycout_polimage_camim->pixels*sycout_polimage_camim->pixels, 0, SYCOUT_MPIID_POLIMAGE);
 	}
 #endif
 

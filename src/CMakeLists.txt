@@ -71,6 +71,7 @@ set(sycamera
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pas2.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pcyl.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pcyl_lookup.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pcyl_lookup_pol.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pdist.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pdist_lookup.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pdist_spec_lookup.c"

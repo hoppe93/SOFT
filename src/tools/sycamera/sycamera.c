@@ -120,8 +120,8 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 				intensity_spectrum = &cone_delta_get_spectrum;
 				intensity_wavelengths = &cone_delta_get_wavelengths;
 				intensity_spectrum_length = &cone_delta_get_spectrum_length;
-				intensity_polarization = NULL;
-				intensity_polarization_spectrum = NULL;
+				intensity_polarization = &cone_delta_get_polarization;
+				intensity_polarization_spectrum = &cone_delta_get_polarization_spectrum;
 			} else if (!strcmp(set->value[i], "dist")) {
 				printf("Selecting cone model 'dist'...\n");
 				intensity_init = &cone_dist_init;

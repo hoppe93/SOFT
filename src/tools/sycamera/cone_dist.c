@@ -34,8 +34,7 @@ double cone_dist_prefactor, cone_dist_preprefactor,
 		*/
 	   *cone_dist_polarization, cone_dist_polcosa, cone_dist_polsina,
 	   *cone_dist_wavelengths, *cone_dist_spectrum,
-	   *cone_dist_polarization, **cone_dist_polarization_spectrum,
-	   cone_dist_dwavelength;
+	   **cone_dist_polarization_spectrum, cone_dist_dwavelength;
 
 #define NPOLARIZATION_COMPONENTS 4
 
@@ -313,14 +312,14 @@ void cone_dist_get_angles(
 	double
 		bhat_ehat = vdot3(vhat, e2),
 		bhat_rcp  = (vhat->val[0]*rcpx + vhat->val[1]*rcpy + vhat->val[2]*rcpz) / r,
-		ehat_rcp  = (vhat->val[0]*rcpx + vhat->val[1]*rcpy + vhat->val[2]*rcpz) / r,
+		ehat_rcp  = (e2->val[0]*rcpx   + e2->val[1]*rcpy   + e2->val[2]*rcpz) / r,
 		bhatXrcpe = (e2->val[0] * (rcp->val[1]*vhat->val[2] - rcp->val[2]*vhat->val[1]) +
 					 e2->val[1] * (rcp->val[2]*vhat->val[0] - rcp->val[0]*vhat->val[2]) +
 					 e2->val[2] * (rcp->val[0]*vhat->val[1] - rcp->val[1]*vhat->val[0])) / r,
 		divfac = 1.0/sqrt((1-bhat_rcp*bhat_rcp)*(1-ehat_rcp*ehat_rcp));
 
-	cone_dist_polcosa = (bhat_ehat - bhat_rcp*ehat_rcp) / divfac;
-	cone_dist_polsina = bhatXrcpe / divfac;
+	cone_dist_polcosa = (bhat_ehat - bhat_rcp*ehat_rcp) * divfac;
+	cone_dist_polsina = bhatXrcpe * divfac;
 
     *cosmu = -(rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
     *sinmu2= 1 - (*cosmu)*(*cosmu);
