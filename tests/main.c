@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
 
 	if (!strcmp(argv[1], "bsspec")) {
 		return test_bss();
+	} else if (!strcmp(argv[1], "bsdist")) {
+		return test_bsdist();
 	} else if (!strcmp(argv[1], "distfunc")) {
 		return test_distfunc();
 	} else if (!strcmp(argv[1], "hyperbola")) {

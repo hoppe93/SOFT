@@ -43,7 +43,9 @@ int particles_r=0, particles_param1=0, particles_param2=0,
 int particles_g_r=0, particles_g_param1=0, particles_g_param2=0,
 	particles_g_done=0, particles_g_nextprogress=0,
 	particles_g_progressteps=0, particles_g_dprogress=0,
-	particles_g_progresscurr=0, particles_g_count=0;
+	particles_g_progresscurr=0, particles_g_count=0,
+/* Account for particle drifts with the 'rdyn' parameter */
+	particles_g_drifts=0;
 
 time_t particles_lastprogress=0;
 
@@ -182,6 +184,7 @@ void particles_init(struct particlespec *spec) {
 	domain_get_bounds(&particles_router, &particles_rinner, NULL, NULL);
 
 	particles_rcoord = spec->rcoord; particles_rn = spec->rn;
+	particles_g_drifts = spec->include_drifts;
 	if (particles_rcoord == PARTICLES_RC_MAJOR) {
 		particles_r0 = spec->r0;
 		particles_r1 = spec->r1;
@@ -462,10 +465,14 @@ particle *particles_generate_distributed(void) {
 	particles_curr_param2 = particles_param2;
 
 	if (particles_rcoord == PARTICLES_RC_DYNAMIC) {
-		double ppar, pperp, pabs2;
-		particles_params2p(param1, param2, &ppar, &pperp, &pabs2);
-		r0 = particles_find_axis_r(ppar, pperp);
-		/* We check if r0 > r before returning later... */
+		if (particles_g_drifts) {
+			double ppar, pperp, pabs2;
+			particles_params2p(param1, param2, &ppar, &pperp, &pabs2);
+			r0 = particles_find_axis_r(ppar, pperp);
+			/* We check if r0 > r before returning later... */
+		} else {
+			r0 = magnetic_axis_r;
+		}
 	}
 
 	/* Last particle for this thread? */
@@ -527,10 +534,14 @@ particle *particles_generate_queue(void) {
 		particles_curr_param2 = particles_g_param2;
 
 		if (particles_rcoord == PARTICLES_RC_DYNAMIC) {
-			double ppar, pperp, pabs2;
-			particles_params2p(param1, param2, &ppar, &pperp, &pabs2);
-			r0 = particles_find_axis_r(ppar, pperp);
-			/* We check if r0 > r before returning later... */
+			if (particles_g_drifts) {
+				double ppar, pperp, pabs2;
+				particles_params2p(param1, param2, &ppar, &pperp, &pabs2);
+				r0 = particles_find_axis_r(ppar, pperp);
+				/* We check if r0 > r before returning later... */
+			} else {
+				r0 = magnetic_axis_r;
+			}
 		}
 
 		/* Last particle for this thread? */

@@ -56,6 +56,7 @@ struct particlespec {
 	enum particles_inputtype inputtype;		/* Bits set according to 'enum particles_inputtype' above */
 	enum particles_generation_type gentype;
 	int rn, pparn, pperpn, pitchn, cospitchn, pn;
+	int include_drifts;						/* = 0 if GC drift terms should be dropped, otherwise drifts are accounted for */
 	enum particles_radial_coordinate rcoord;/* Type of radial coordinate */
 	int gc_position;			/* Guiding-center position (rather than particle pos.) is given */
 	double zeta0;				/* Initial gyro-phase to drop the particle at */

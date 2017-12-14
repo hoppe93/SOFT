@@ -117,6 +117,7 @@ void cone_dist_init_step(step_data*);
 double cone_dist_get_intensity(step_data*,vector*,vector*,vector*,vector*,vector*);
 double cone_dist_Ihat(double, double, double);
 double cone_dist_Ihat_spec(double, double, double);
+double cone_dist_Ihat_bremsspec(double, double, double);
 double *cone_dist_get_wavelengths(void);
 double *cone_dist_get_spectrum(void);
 double *cone_dist_get_polarization(void);
@@ -188,6 +189,16 @@ double *sycamera_pdist_get_polarization(void);
 double **sycamera_pdist_get_polarization_spectrum(void);
 double *sycamera_pdist_get_wavelengths(void);
 int sycamera_pdist_get_spectrum_length(void);
+
+void sycamera_bremsdist_init(double, double, int);
+void sycamera_bremsdist_init_run(void);
+void sycamera_bremsdist_init_particle(double, double);
+double sycamera_bremsdist_int(double, double, double, double, double, double, double);
+double *sycamera_bremsdist_get_spectrum(void);
+double *sycamera_bremsdist_get_polarization(void);
+double **sycamera_bremsdist_get_polarization_spectrum(void);
+double *sycamera_bremsdist_get_wavelengths(void);
+int sycamera_bremsdist_get_spectrum_length(void);
 
 double *sycamera_get_spectrum(void);
 double *sycamera_get_wavelengths(void);

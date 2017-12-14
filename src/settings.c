@@ -443,6 +443,9 @@ settings *settings_interpret() {
 		}
 	}
 
+	if (set->particlespec != NULL)
+		set->particlespec->include_drifts = !set->nodrifts;
+
 	return set;
 }
 
