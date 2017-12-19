@@ -26,6 +26,7 @@ double cone_dist_prefactor, cone_dist_preprefactor,
 	   cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3, cone_dist_costheta,
 	   cone_dist_sintheta, cone_dist_B, cone_dist_betapar2, cone_dist_betaperp2,
 	   cone_dist_gammapar2, cone_dist_betapar, cone_dist_betaperp,
+	   cone_dist_gamma, cone_dist_gamma2,
 	   /* The polarization has four components:
 		* [0] = |A_{left-right}|^2
 		* [1] = |A_{up-down}|^2
@@ -34,8 +35,7 @@ double cone_dist_prefactor, cone_dist_preprefactor,
 		*/
 	   *cone_dist_polarization, cone_dist_polcosa, cone_dist_polsina,
 	   *cone_dist_wavelengths, *cone_dist_spectrum,
-	   *cone_dist_polarization, **cone_dist_polarization_spectrum,
-	   cone_dist_dwavelength;
+	   **cone_dist_polarization_spectrum, cone_dist_dwavelength;
 
 #define NPOLARIZATION_COMPONENTS 4
 
@@ -47,7 +47,7 @@ double (*Ihat)(double,double,double)=NULL;
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
 	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
 	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum, \
-	cone_dist_polarization_spectrum)
+	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -81,20 +81,33 @@ void cone_dist_init(
 
 		cone_dist_nwavelengths = spectrum_resolution;
 		cone_dist_dwavelength = fabs((wavelengths[1]-wavelengths[0])/spectrum_resolution);
-	/*
-	} else if (radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG) {
-		Ihat = cone_dist_brems_Ihat;
-	*/
-	} else {
-        fprintf(stderr, "WARNING: radiation: This cone model only supports synchrotron radiation\n");
-    }
+	} else if (radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
+		Ihat = cone_dist_Ihat_bremsspec;
 
-	//Ihat = cone_dist_Ihat_benchmark;
+		if (wavelengths == NULL) {
+			fprintf(stderr, "ERROR: No spectral range set for the detector.\n");
+			exit(-1);
+		}
+		if (wavelengths[0] > wavelengths[1]) {
+			fprintf(stderr, "ERROR: The lower wavelength boundary must be equal or less than the upper.\n");
+			exit(-1);
+		}
+
+		sycamera_bremsdist_init(wavelengths[0], wavelengths[1], spectrum_resolution);
+
+		cone_dist_nwavelengths = spectrum_resolution;
+		cone_dist_dwavelength = fabs((wavelengths[1]-wavelengths[0])/spectrum_resolution);
+	} else {
+        fprintf(stderr, "WARNING: This cone model only supports synchrotron radiation (w & w/o spectrum) and bremsstrahlung.\n");
+    }
 
 	cone_dist_nint = integral_resolution;
 }
 void cone_dist_init_run(void) {
-	sycamera_pdist_init_run();
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
+		sycamera_pdist_init_run();
+	else if (cone_dist_radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM)
+		sycamera_bremsdist_init_run();
 
 	cone_dist_spectrum = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization = malloc(sizeof(double)*4);
@@ -120,7 +133,13 @@ void cone_dist_init_particle(particle *p) {
 
     cone_dist_preprefactor = e4 / (8.0*PI*EPS0*LIGHTSPEED*cone_dist_mass*cone_dist_mass);
 
-	sycamera_pdist_init_particle(p->mass);
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM)
+		sycamera_pdist_init_particle(p->mass);
+	else if (cone_dist_radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
+		double beta2 = (p->vpar*p->vpar + p->vperp*p->vperp) / (LIGHTSPEED*LIGHTSPEED);
+		double p0 = p->mass * sqrt(beta2 / (1 - beta2));
+		sycamera_bremsdist_init_particle(p->mass, p0);
+	}
 }
 /**
  * Called to prepare the model for processing
@@ -134,7 +153,9 @@ void cone_dist_init_step(step_data *sd) {
     cone_dist_beta = cone_dist_speed / LIGHTSPEED;
 	cone_dist_beta2 = cone_dist_beta*cone_dist_beta;
 	cone_dist_gammai2 = 1 - cone_dist_beta2;
-	cone_dist_gamma3 = 1/(cone_dist_gammai2*sqrt(cone_dist_gammai2));
+	cone_dist_gamma2 = 1/cone_dist_gammai2;
+	cone_dist_gamma = sqrt(cone_dist_gamma2);
+	cone_dist_gamma3 = cone_dist_gamma*cone_dist_gamma2;
     cone_dist_costheta = fabs(sd->vpar / cone_dist_speed);
     cone_dist_sintheta = sd->vperp / cone_dist_speed;
 	cone_dist_betapar = cone_dist_beta*cone_dist_costheta;
@@ -285,8 +306,10 @@ double cone_dist_Ihat_spec(double sinmu, double cosmu, double sinmu2) {
 		cone_dist_polcosa, cone_dist_polsina
 	);
 }
-double cone_dist_brems_Ihat(double sinmu, double cosmu, double sinmu2) {
-	return 0.0;
+double cone_dist_Ihat_bremsspec(double sinmu, double cosmu, double sinmu2) {
+	return sycamera_bremsdist_int(
+		cone_dist_gamma, cone_dist_gamma2, cone_dist_beta, sinmu, cosmu, cone_dist_sintheta, cone_dist_costheta
+	);
 }
 
 /**
@@ -313,14 +336,14 @@ void cone_dist_get_angles(
 	double
 		bhat_ehat = vdot3(vhat, e2),
 		bhat_rcp  = (vhat->val[0]*rcpx + vhat->val[1]*rcpy + vhat->val[2]*rcpz) / r,
-		ehat_rcp  = (vhat->val[0]*rcpx + vhat->val[1]*rcpy + vhat->val[2]*rcpz) / r,
-		bhatXrcpe = (e2->val[0] * (rcp->val[1]*vhat->val[2] - rcp->val[2]*vhat->val[1]) +
-					 e2->val[1] * (rcp->val[2]*vhat->val[0] - rcp->val[0]*vhat->val[2]) +
-					 e2->val[2] * (rcp->val[0]*vhat->val[1] - rcp->val[1]*vhat->val[0])) / r,
+		ehat_rcp  = (e2->val[0]*rcpx   + e2->val[1]*rcpy   + e2->val[2]*rcpz) / r,
+		bhatXrcpe = (e2->val[0] * (vhat->val[1]*rcp->val[2] - vhat->val[2]*rcp->val[1]) +
+					 e2->val[1] * (vhat->val[2]*rcp->val[0] - vhat->val[0]*rcp->val[2]) +
+					 e2->val[2] * (vhat->val[0]*rcp->val[1] - vhat->val[1]*rcp->val[0])) / r,
 		divfac = 1.0/sqrt((1-bhat_rcp*bhat_rcp)*(1-ehat_rcp*ehat_rcp));
 
-	cone_dist_polcosa = (bhat_ehat - bhat_rcp*ehat_rcp) / divfac;
-	cone_dist_polsina = bhatXrcpe / divfac;
+	cone_dist_polcosa = (bhat_ehat - bhat_rcp*ehat_rcp) * divfac;
+	cone_dist_polsina = bhatXrcpe * divfac;
 
     *cosmu = -(rcpx*vhat->val[0] + rcpy*vhat->val[1] + rcpz*vhat->val[2]) / r;
     *sinmu2= 1 - (*cosmu)*(*cosmu);
@@ -417,11 +440,13 @@ double cone_dist_get_intensity(
 double *cone_dist_get_wavelengths(void) {
 	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
 		return sycamera_pdist_get_wavelengths();
+	} else if (cone_dist_radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
+		return sycamera_bremsdist_get_wavelengths();
 	} else return NULL;
 }
 double *cone_dist_get_spectrum(void) {
-	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
-		//return sycamera_pdist_get_spectrum();
+	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM ||
+		cone_dist_radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
 		return cone_dist_spectrum;
 	} else return NULL;
 }
@@ -437,7 +462,6 @@ double **cone_dist_get_polarization_spectrum(void) {
 }
 int cone_dist_get_spectrum_length(void) {
 	if (cone_dist_radt == SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) {
-		//return sycamera_pdist_get_spectrum_length();
 		return cone_dist_nwavelengths;
 	} else return 0;
 }
@@ -446,6 +470,8 @@ int cone_dist_get_spectrum_length(void) {
  * Spectrum and polarization addition/resets.
  */
 void cone_dist_add_spectrum_and_polarization(double factor) {
+	if (cone_dist_radt != SYCAMERA_RADIATION_SYNCHROTRON_SPECTRUM) return;
+
 	double *spectrum, *polarization, **polspec;
 	spectrum = sycamera_pdist_get_spectrum();
 	polarization = sycamera_pdist_get_polarization();

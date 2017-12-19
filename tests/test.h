@@ -6,6 +6,7 @@ void init_magnetic_circular();
 
 /* Test functions */
 int test_bss(void);
+int test_bsdist(void);
 int test_distfunc(void);
 int test_hyp(void);
 

@@ -58,6 +58,7 @@ set(sycamera
 	#"${PROJECT_SOURCE_DIR}/src/tools/sycamera/ascii.c"
 	#"${PROJECT_SOURCE_DIR}/src/tools/sycamera/binary.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/bsspectrum.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/bremsdist.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/cone_delta.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/cone_dist.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/df_interp.c"
@@ -71,6 +72,7 @@ set(sycamera
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pas2.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pcyl.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pcyl_lookup.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pcyl_lookup_pol.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pdist.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pdist_lookup.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/pdist_spec_lookup.c"
@@ -88,6 +90,7 @@ set(sycamera
 set(tests
 	"${PROJECT_SOURCE_DIR}/tests/main.c"
 	"${PROJECT_SOURCE_DIR}/tests/bremsspec.c"
+	"${PROJECT_SOURCE_DIR}/tests/bremsdist.c"
 	"${PROJECT_SOURCE_DIR}/tests/distfunc.c"
 	"${PROJECT_SOURCE_DIR}/tests/hyperbola.c"
 )
@@ -98,7 +101,7 @@ set(tools
 
 if (DEBUG)
 	message(STATUS "Compiling in DEBUG mode")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -fopenmp -O0 -g -pg -D_FILE_OFFSET_BITS=64")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -fopenmp -O0 -g -pg -no-pie -D_FILE_OFFSET_BITS=64")
 else (DEBUG)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter -fopenmp -O3 -march=native -D_FILE_OFFSET_BITS=64")
 endif (DEBUG)

@@ -52,7 +52,7 @@ end
 
 fwrite(fid, ['};',10,10]);
 
-fwrite(fid, ['const double sycamera_pdist_spec_lookup_f1[',n,'] = {/* K_{1/3}(x)^2 */',10]);
+fwrite(fid, ['const double sycamera_pdist_spec_lookup_f1[',n,'] = {/* x^2 * K_{1/3}(x)^2 */',10]);
 for i=1:numel(power1)
     if mod(i,10) == 1
         fwrite(fid, 9);
@@ -70,7 +70,7 @@ for i=1:numel(power1)
 end
 fwrite(fid, ['};',10,10]);
 
-fwrite(fid, ['const double sycamera_pdist_spec_lookup_f2[',n,'] = {/* K_{2/3}(x)^2 */',10]);
+fwrite(fid, ['const double sycamera_pdist_spec_lookup_f2[',n,'] = {/* x^2 * K_{2/3}(x)^2 */',10]);
 for i=1:numel(power2)
     if mod(i,10) == 1
         fwrite(fid, 9);

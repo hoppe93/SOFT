@@ -8,5 +8,6 @@
 #define PI 3.14159265359
 #define MOMENTUM (5.344286e-28)
 #define PLANCKH (6.626070040e-34)
+#define PLANCKHBAR (PLANCKH/(2.0*PI))
 
 #endif/*_CONSTANTS_H*/
