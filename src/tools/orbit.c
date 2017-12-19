@@ -16,7 +16,8 @@
 double max_time=0, tstart=0, orbit_mass=0, *simtime, **solution_values=NULL;
 unsigned int time_index=0, allocated=0, points=0, orbit_variables=0,
 	solution_values_length=0, *solution_values_sizes=NULL,
-	QUANTITY_KINEN, QUANTITY_XI, QUANTITY_B, QUANTITY_GAMMA, QUANTITY_MU;
+	QUANTITY_KINEN, QUANTITY_XI, QUANTITY_B, QUANTITY_BX, QUANTITY_BY,
+	QUANTITY_BZ, QUANTITY_GAMMA, QUANTITY_MU;
 vector *solution=NULL;
 char *orbit_output_file=NULL;
 #define DEFAULT_POINTS 1000
@@ -51,6 +52,9 @@ ode_solution *orbit_init_particle(particle *p) {
 	QUANTITY_KINEN=quantities_define("Energy");
 	QUANTITY_XI=quantities_define("xi");
 	QUANTITY_B=quantities_define("B");
+	QUANTITY_BX=quantities_define("BX");
+	QUANTITY_BY=quantities_define("BY");
+	QUANTITY_BZ=quantities_define("BZ");
 	QUANTITY_GAMMA=quantities_define("gamma");
 	QUANTITY_MU=quantities_define("mu");
 
@@ -124,10 +128,14 @@ void orbit_step(ode_solution *solver_object, step_data *sd) {
 	double kinen = orbit_mass * LIGHTSPEED*LIGHTSPEED * (gamma - 1);
 	double pperp = gamma * orbit_mass * sd->vperp;
 	double mu = pperp*pperp / (2*orbit_mass*sd->B);
+	vector *Bvec = magnetic_field_get(sd->x, sd->y, sd->z);
 
 	quantities_report(QUANTITY_KINEN, kinen, time_index);
 	quantities_report(QUANTITY_XI, sd->vpar/sqrt(vtot), time_index);
 	quantities_report(QUANTITY_B, sd->B, time_index);
+	quantities_report(QUANTITY_BX, Bvec->val[0], time_index);
+	quantities_report(QUANTITY_BY, Bvec->val[1], time_index);
+	quantities_report(QUANTITY_BZ, Bvec->val[2], time_index);
 	quantities_report(QUANTITY_GAMMA, gamma, time_index);
 	quantities_report(QUANTITY_MU, mu, time_index);
 
