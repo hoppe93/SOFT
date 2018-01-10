@@ -5,14 +5,16 @@
 #include <sycamera.h>
 #include "test.h"
 
+void sycamera_bremsdist_evalZ(double, double);
+
 int test_bsdist(void) {
 	double
-		E0 = 9.0,
-		theta0 = 0.05,
-		pitch = 0.13,
+		E0 = 50.0,
+		theta0 = 0.0,
+		pitch = 0.10,
 		Zeff = 1.0,
-		k1 = 5.0,
-		k2 = 10.0,
+		k1 = 1.0,
+		k2 = 1.0,
 
 		/* Computed quantities */
 		mu = theta0+pitch,

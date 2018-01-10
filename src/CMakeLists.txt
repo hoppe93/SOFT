@@ -85,6 +85,9 @@ set(sycamera
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/sycamera.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/sycout.c"
 	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/topview.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/lookup/Zeta11_lookup.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/lookup/Zeta12_lookup.c"
+	"${PROJECT_SOURCE_DIR}/src/tools/sycamera/lookup/Zeta21_lookup.c"
 )
 
 set(tests

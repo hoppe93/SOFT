@@ -82,6 +82,22 @@ extern const double sycamera_pdist_spec_lookup_f1[];
 extern const double sycamera_pdist_spec_lookup_f2[];
 extern const double sycamera_pdist_spec_lookup_xi[];
 
+/* Lookup tables (ZetaMN) */
+extern const double sycamera_Zeta11_lookup_kmin, sycamera_Zeta11_lookup_gammaMax;
+extern const int sycamera_Zeta11_lookup_nx, sycamera_Zeta11_lookup_ny;
+extern const double sycamera_Zeta11_lookup_x[],  sycamera_Zeta11_lookup_y[];
+extern const double sycamera_Zeta11_lookup_Z[];
+
+extern const double sycamera_Zeta12_lookup_kmin, sycamera_Zeta12_lookup_gammaMax;
+extern const int sycamera_Zeta12_lookup_nx, sycamera_Zeta12_lookup_ny;
+extern const double sycamera_Zeta12_lookup_x[],  sycamera_Zeta12_lookup_y[];
+extern const double sycamera_Zeta12_lookup_Z[];
+
+extern const double sycamera_Zeta21_lookup_kmin, sycamera_Zeta21_lookup_gammaMax;
+extern const int sycamera_Zeta21_lookup_nx, sycamera_Zeta21_lookup_ny;
+extern const double sycamera_Zeta21_lookup_x[],  sycamera_Zeta21_lookup_y[];
+extern const double sycamera_Zeta21_lookup_Z[];
+
 /* Functions required by SOFT */
 void sycamera_init(struct general_settings*, struct general_settings*, int);
 void sycamera_init_run(unsigned int);
