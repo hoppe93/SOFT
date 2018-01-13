@@ -150,8 +150,8 @@ int cone_delta_can_radiation_hit(step_data *sd, vector *temps) {
 	double sinxi = vdot3(vhat, e2) / sinphi;
 	double tanxi = sinxi / cosxi;
 
-	/* Length of vector from particle to velocity intersection with camera plane */
-	double X = fabs(rcp_ddet/cosphi);// + rg/tanThetap;
+	/* Length of vector from particle */
+	double X = fabs(rcp_ddet/cosphi);
 
 	/* Compute semi-axes */
 	double cms = cos2Thetap - sin2phi;
@@ -274,7 +274,6 @@ void cone_delta_hyperbola_intersections(
 	double arg1 = (sqr-d)*b;
 	double arg2 = (-sqr-d)*b;
 
-	//if (arg1 <= 0.0) arg1 = -arg1;
 	/* Only allow real solutions */
 	if (arg1 > 0) {
 		*t1 = log(arg1);
@@ -287,7 +286,6 @@ void cone_delta_hyperbola_intersections(
 		else *ok1 = 0;
 	} else *ok1 = 0;
 
-	//if (arg2 <= 0.0) arg2 = -arg2;
 	/* Only allow real solutions */
 	if (arg2 > 0) {
 		*t2 = log(arg2);
@@ -299,6 +297,17 @@ void cone_delta_hyperbola_intersections(
 			*ok2 = 1;
 		else *ok2 = 0;
 	} else *ok2 = 0;
+
+	/*
+	if (arg1 > 0 && arg2 > 0)
+		printf("y1=%e, y2=%e\n", *y1, *y2);
+	else if (arg1 > 0 && arg2 <= 0)
+		printf("y1=%e, y2=%e\n", *y1, 0.0);
+	else if (arg1 <= 0 && arg2 > 0)
+		printf("y1=%e, y2=%e\n", 0.0, *y2);
+	else
+		printf("y1=%e, y2=%e\n", 0.0, 0.0);
+	*/
 }
 
 /**
@@ -327,6 +336,8 @@ void cone_delta_find_intersections(
 ) {
 	double t1,t2,x1,x2,y1,y2;
 	int ok1=0,ok2=0;
+
+	//printf("x0=%e, y0=%e\n", x0, y0);
 
 	/************************************************/
 	/*********** FIND INTERSECTION POINTS ***********/

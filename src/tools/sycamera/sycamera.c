@@ -49,7 +49,8 @@ double sycamera_zeff,			/* Effective plasma charge, used by bremsstrahlung compo
 
 vector *temps=NULL, *e1, *e2;
 const int NUMBER_OF_TEMPS=7;
-int sycamera_has_distfunc;		/* Whether or not a distribution function is available */
+int sycamera_has_distfunc,		/* Whether or not a distribution function is available */
+	sycamera_domain_is_transparent;/* Whether or not the domain is transparent to this type of radiation */
 enum sycamera_radiation_type radiation_type=SYCAMERA_RADIATION_SYNCHROTRON;
 
 void (*intensity_init)(enum sycamera_radiation_type, double*, int, int)=NULL;
@@ -168,6 +169,13 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 		} else if (!strcmp(set->setting[i], "distribution_function")) {
 			distfunc_load(set->value[i]);
 			sycamera_has_distfunc = 1;
+		} else if (!strcmp(set->setting[i], "domain_is_transparent")) {
+			if (!strcmp(set->value[i], "yes"))
+				sycamera_domain_is_transparent = 1;
+			else if (strcmp(set->value[i], "no")) {
+				fprintf(stderr, "Unrecognized choice for 'domain_is_transparent': %s\n", set->value[i]);
+				exit(-1);
+			}
 		} else if (!strcmp(set->setting[i], "integral_resolution")) {
 			integral_resolution = atoi(set->value[i]);
 		} else if (!strcmp(set->setting[i], "position")) {
@@ -472,7 +480,7 @@ int sycamera_process_step(step_data *sd, double RdPhi) {
 		   NOTE: This is a really heavy operation and should be done
 		   after all other tests.
 	 	*/
-		if (domain_check3d(sd->x, sd->y, sd->z, Rdet->val[0], Rdet->val[1], Rdet->val[2]) == DOMAIN_OUTSIDE) {
+		if (!sycamera_domain_is_transparent && domain_check3d(sd->x, sd->y, sd->z, Rdet->val[0], Rdet->val[1], Rdet->val[2]) == DOMAIN_OUTSIDE) {
 			return 0;
 		}
 
