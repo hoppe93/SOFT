@@ -62,18 +62,18 @@ double *vpp2v(double vpar, double vperp, double *xyz, double *v) {
 	bhat->val[2] /= Babs;
 
 	double bhatox, bhatoy, bhatoz;
-	if (bhat->val[2] > bhat->val[1] && bhat->val[2] > bhat->val[0]) {
+	if (fabs(bhat->val[2]) > fabs(bhat->val[1]) && fabs(bhat->val[2]) > fabs(bhat->val[0])) {
 		bhatoz = -(bhat->val[0] + bhat->val[1])/bhat->val[2];
 		bhatoy = 1;
 		bhatox = 1;
-	} else if (bhat->val[1] > bhat->val[0]) {
+	} else if (fabs(bhat->val[1]) > fabs(bhat->val[0])) {
 		bhatox = 1;
 		bhatoy = -(bhat->val[2]+bhat->val[0])/bhat->val[1];
 		bhatoz = 1;
 	} else {
-		bhatox = 1;
+		bhatox = -(bhat->val[1]+bhat->val[2])/bhat->val[0];
 		bhatoy = 1;
-		bhatoz = -(bhat->val[0]+bhat->val[1])/bhat->val[2];
+		bhatox = 1;
 	}
 
 	/* Normalize orthogonal vector */

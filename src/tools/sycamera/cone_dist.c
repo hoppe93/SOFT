@@ -10,6 +10,7 @@
 #include <math.h>
 #include <omp.h>
 #include <stdlib.h>
+#include "counter.h"
 #include "global.h"
 #include "sycamera.h"
 #include "tools.h"
@@ -20,7 +21,7 @@ double rdet;
 #endif
 
 enum sycamera_radiation_type cone_dist_radt;
-int cone_dist_nint=3, cone_dist_nwavelengths;
+int cone_dist_nint=3, cone_dist_nwavelengths, COUNTER_ONE, COUNTER_TWO;
 double cone_dist_prefactor, cone_dist_preprefactor,
        cone_dist_charge, cone_dist_mass, cone_dist_speed, cone_dist_beta,
 	   cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3, cone_dist_costheta,
@@ -47,7 +48,7 @@ double (*Ihat)(double,double,double)=NULL;
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
 	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
 	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum, \
-	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum)
+	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum, COUNTER_ONE, COUNTER_TWO)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -116,6 +117,9 @@ void cone_dist_init_run(void) {
 	cone_dist_polarization_spectrum[1] = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization_spectrum[2] = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization_spectrum[3] = malloc(sizeof(double)*cone_dist_nwavelengths);
+
+	COUNTER_ONE = counter_create("one");
+	COUNTER_TWO = counter_create("two");
 }
 
 /**
@@ -216,8 +220,10 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 	/* Check if we're on the right solution */
 	if (cosphi < 0) {
-		if ((a-ola)*sinphi > X) return 0.0;
-	} else if ((a-ola)*sinphi < X || cms > 0) return 0.0;
+		if ((a-ola)*sinphi > X) return 0;
+	} else if ((a-ola)*sinphi < X || cms > 0) return 0;
+
+	//printf("X = %e, sinphi = %e, cms = %e, sin2Thetapola = %e\n", X, sinphi, cms, ola);
 
 	double x1;
 
@@ -406,9 +412,13 @@ double cone_dist_get_intensity(
 		r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2],
 		weight = vdot3(rcp, ddet) / sqrt(r2), fac;
 
-    if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
+	counter_inc(COUNTER_ONE);
+
     //if (!cone_dist_can_radiation_hit2(sd, empty1, empty2))
-        return 0.0;
+	if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
+		return 0.0;
+	
+	counter_inc(COUNTER_TWO);
 
     dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
     dX2 = dX+dX;

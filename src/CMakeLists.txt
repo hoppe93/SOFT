@@ -23,6 +23,7 @@ set(mainprogram
 	"${PROJECT_SOURCE_DIR}/src/main.c"
 )
 set(main
+	"${PROJECT_SOURCE_DIR}/src/counter.c"
 	"${PROJECT_SOURCE_DIR}/src/ctsv.c"
 	"${PROJECT_SOURCE_DIR}/src/diag.c"
 	"${PROJECT_SOURCE_DIR}/src/domain.c"

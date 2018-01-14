@@ -55,7 +55,7 @@ void sycamera_bremsdist_init(double k0, double k1, int spectrum_resolution) {
 
 	sycamera_bremsdist_wavelengths[0] = k0;
 
-	for (i = 0; i < sycamera_bremsdist_spectrum_resolution; i++) {
+	for (i = 1; i < sycamera_bremsdist_spectrum_resolution; i++) {
 		sycamera_bremsdist_wavelengths[i] = sycamera_bremsdist_wavelengths[i-1] + dk;
 	}
 }

@@ -6,6 +6,7 @@
 #include <omp.h>
 #include <sys/time.h>
 
+#include "counter.h"
 #include "config.h"
 #include "ctsv.h"
 //#include "diag.h"
@@ -329,6 +330,9 @@ void run_particles(int threadid, int nthreads, int mpi_rank, int nprocesses, voi
 	tool *usetool = (tool*)tl;
 	settings *set = (settings*)st;
 
+	/* Init counters (for debugging) */
+	counter_init();
+
 	/* Initialize internal diagnostics */
 	//diag_init("diag.txt");
 
@@ -364,6 +368,8 @@ void run_particles(int threadid, int nthreads, int mpi_rank, int nprocesses, voi
 
 		avtime += partime;
 	}
+	
+	counter_merge_all();
 
 	usetool->deinit_run();
 	//diag_deinit();
@@ -545,6 +551,8 @@ int main(int argc, char *argv[]) {
 		int threadid = omp_get_thread_num() + set->threads*mpi_rank;
 		run_particles(threadid, set->threads*nprocesses, mpi_rank, nprocesses, eq, mh, usetool, set);
 	}
+
+	counter_print();
 
 	/* Write solution data to file specified in input file */
 	usetool->output(eq);
