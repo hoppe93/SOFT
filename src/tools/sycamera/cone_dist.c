@@ -10,7 +10,6 @@
 #include <math.h>
 #include <omp.h>
 #include <stdlib.h>
-#include "counter.h"
 #include "global.h"
 #include "sycamera.h"
 #include "tools.h"
@@ -21,7 +20,7 @@ double rdet;
 #endif
 
 enum sycamera_radiation_type cone_dist_radt;
-int cone_dist_nint=3, cone_dist_nwavelengths, COUNTER_ONE, COUNTER_TWO;
+int cone_dist_nint=3, cone_dist_nwavelengths;
 double cone_dist_prefactor, cone_dist_preprefactor,
        cone_dist_charge, cone_dist_mass, cone_dist_speed, cone_dist_beta,
 	   cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3, cone_dist_costheta,
@@ -48,7 +47,7 @@ double (*Ihat)(double,double,double)=NULL;
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
 	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
 	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum, \
-	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum, COUNTER_ONE, COUNTER_TWO)
+	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -117,9 +116,6 @@ void cone_dist_init_run(void) {
 	cone_dist_polarization_spectrum[1] = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization_spectrum[2] = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization_spectrum[3] = malloc(sizeof(double)*cone_dist_nwavelengths);
-
-	COUNTER_ONE = counter_create("one");
-	COUNTER_TWO = counter_create("two");
 }
 
 /**
@@ -191,7 +187,7 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 	double vmag = hypot(sd->vpar, sd->vperp);
 	double sinThetap = sd->vperp / vmag;
 	double sin2Thetap = sinThetap*sinThetap;
-	double cosThetap = sd->vpar / vmag;
+	double cosThetap = fabs(sd->vpar / vmag);
 	double cos2Thetap= cosThetap*cosThetap;
 	double cosphi = vdot3(vhat, ddet);
 	double sin2phi = 1-cosphi*cosphi;
@@ -207,7 +203,7 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 	/* Compute semi-axes */
 	double cms = cos2Thetap - sin2phi;
-	double a = fabs((cosThetap*sinThetap*X*cosphi)/cms);
+	double a = (cosThetap*sinThetap*X*cosphi)/cms;
 	double b = (sinThetap*X*cosphi)/sqrt(fabs(cms));
 	double ola=-sin2Thetap/cms*X*sinphi;
 	double x0=-ola*cosxi;
@@ -219,11 +215,12 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 	//double yhit = xhitv->val[0]*ddet->val[2] + xhitv->val[1]*e1->val[2] + xhitv->val[2]*e2->val[2];
 
 	/* Check if we're on the right solution */
+	double t = -sinThetap*sinphi / cms * (cosThetap*cosphi + sinThetap*sinphi);
 	if (cosphi < 0) {
-		if ((a-ola)*sinphi > X) return 0;
-	} else if ((a-ola)*sinphi < X || cms > 0) return 0;
-
-	//printf("X = %e, sinphi = %e, cms = %e, sin2Thetapola = %e\n", X, sinphi, cms, ola);
+		if (t > 1.0) return 0;
+	} else if (t < 1.0 || cms > 0) {
+		return 0;
+	}
 
 	double x1;
 
@@ -234,11 +231,17 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 		x1 = a*cost*cosxi + b*sint*sinxi;
 	} else {	/* Hyperbola */
+		return 1;
+		/*
 		double tanht = -b/a*tanxi, tanht2 = tanht*tanht;
 		double cosht = 1/sqrt(1-tanht2);
 		double sinht = tanht*cosht;
 
+		if (tanht2 > 1)
+			printf("a = %e, b = %e, tanht = %e, tanxi = %e\n", a, b, tanht, tanxi);
+
 		x1 = a*cosht*cosxi + b*sinht*sinxi;
+		*/
 	}
 
 	double s1 = xhit+x0+x1, s2 = xhit+x0-x1;
@@ -412,14 +415,10 @@ double cone_dist_get_intensity(
 		r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2],
 		weight = vdot3(rcp, ddet) / sqrt(r2), fac;
 
-	counter_inc(COUNTER_ONE);
-
     //if (!cone_dist_can_radiation_hit2(sd, empty1, empty2))
 	if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
 		return 0.0;
 	
-	counter_inc(COUNTER_TWO);
-
     dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
     dX2 = dX+dX;
 	fac = dX*dX*weight / (9.0*r2);

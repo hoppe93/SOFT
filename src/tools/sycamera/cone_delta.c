@@ -155,7 +155,7 @@ int cone_delta_can_radiation_hit(step_data *sd, vector *temps) {
 
 	/* Compute semi-axes */
 	double cms = cos2Thetap - sin2phi;
-	double a = fabs((cosThetap*sinThetap*X*cosphi)/cms);
+	double a = (cosThetap*sinThetap*X*cosphi)/cms;
 	double b = (sinThetap*X*cosphi)/sqrt(fabs(cms));
 	double ola=-sin2Thetap/cms*X*sinphi;
 	double x0=-ola*cosxi;
@@ -167,9 +167,10 @@ int cone_delta_can_radiation_hit(step_data *sd, vector *temps) {
 	//double yhit = xhitv->val[0]*ddet->val[2] + xhitv->val[1]*e1->val[2] + xhitv->val[2]*e2->val[2];
 	
 	/* Check if we're on the right solution */
+	double forwardCone = -sinThetap*sinphi / cms * (cosThetap*cosphi + sinThetap*sinphi);
 	if (cosphi < 0) {
-		if ((a-ola)*sinphi > X) return 0.0;
-	} else if ((a-ola)*sinphi < X || cms > 0) return 0.0;
+		if (forwardCone > 1.0) return 0;
+	} else if (forwardCone < 1.0 || cms > 0) return 0;
 
 	double x1;
 
@@ -180,11 +181,17 @@ int cone_delta_can_radiation_hit(step_data *sd, vector *temps) {
 
 		x1 = a*cost*cosxi + b*sint*sinxi;
 	} else {	/* Hyperbola */
+		/* The below does not work if 'tanxi > 1', and
+		 * it should be further investigated whether
+		 * a condition like this can actually be implemented
+		 * for the hyperbola.
 		double tanht = -b/a*tanxi, tanht2 = tanht*tanht;
 		double cosht = 1/sqrt(1-tanht2);
 		double sinht = tanht*cosht;
 
 		x1 = a*cosht*cosxi + b*sinht*sinxi;
+		*/
+		return 1;
 	}
 
 	double s1 = xhit+x0+x1, s2 = xhit+x0-x1;
@@ -540,9 +547,10 @@ double cone_delta_radiation_hits(
 	double y0 = ola*sinxi + yh;
 
 	/* Check if we're on the right solution (forward cone) */
+	double forwardCone = -sinThetap*sinphi / cms * (cosThetap*cosphi + sinThetap*sinphi);
 	if (cosphi < 0) {
-		if ((a-ola)*sinphi > X) return 0.0;
-	} else if ((a-ola)*sinphi < X || cms > 0) return 0.0;
+		if (forwardCone > 1.0) return 0;
+	} else if (forwardCone < 1.0 || cms > 0) return 0;
 
 	double t[8], xval[8], yval[8], rdet2=rdet/2;
 	int tindex=0;
