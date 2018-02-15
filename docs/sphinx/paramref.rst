@@ -405,6 +405,17 @@ such as an image, spectrum or combination thereof.
    Sets the number of pixels of the image, i.e. the number of elements in each of the ``i``
    and ``j`` dimensions. Only required if either ``i`` or ``j`` appears in the ``function`` option.
 
+.. option:: stokesparams
+
+   | **Default value:** ``no``
+   | **Example line:** ``stokesparams=yes``
+   | **Allowed values:** ``yes`` or ``no``
+
+   If set to ``yes``, each of the four Stokes parameters I, U, Q and V will be stored in
+   the Green's function (thereby giving it an extra dimension with four elements). If
+   set to ``no``, only the intensity parameter is stored, which is the value commonly
+   measured by spectrometers and cameras.
+
 .. option:: suboffseti
 .. option:: suboffsetj
 

@@ -60,7 +60,8 @@ enum sycout_green_dimension {
 	SYCOUT_GREEN_IMAGEJ,
 	SYCOUT_GREEN_SPECTRUM,
 	SYCOUT_GREEN_VEL1,
-	SYCOUT_GREEN_VEL2
+	SYCOUT_GREEN_VEL2,
+    SYCOUT_GREEN_STOKES
 };
 
 void sycout_green_init(struct general_settings*);

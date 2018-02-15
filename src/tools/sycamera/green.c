@@ -26,7 +26,8 @@ size_t
 	sycout_green_suboffseti, sycout_green_suboffsetj;
 
 int sycout_green_weighWdf, sycout_green_haswav,
-	sycout_green_hasrho, sycout_green_hasvel1, sycout_green_hasvel2;
+	sycout_green_hasrho, sycout_green_hasvel1, sycout_green_hasvel2,
+    sycout_green_stokesparams;
 
 size_t sycout_green_func_sz;
 #define SYCOUT_GREEN_MAXDIMS 6
@@ -51,6 +52,7 @@ void sycout_green_init(struct general_settings *settings) {
 	sycout_green_hasrho = 0;
 	sycout_green_hasvel1 = 0;
 	sycout_green_hasvel2 = 0;
+    sycout_green_stokesparams = 0;
 
 	sycout_green_suboffseti = 0;
 	sycout_green_suboffsetj = 0;
@@ -74,6 +76,11 @@ void sycout_green_init(struct general_settings *settings) {
 			sycout_green_suboffsetj = atoi(settings->value[i]);
 		} else if (!strcmp(settings->setting[i], "subpixels")) {
 			sycout_green_subpixels = atoi(settings->value[i]);
+        } else if (!strcmp(settings->setting[i], "stokesparams")) {
+            if (!strcmp(settings->value[i], "yes"))
+                sycout_green_stokesparams = 1;
+            else
+                sycout_green_stokesparams = 0;
 		} else if (!strcmp(settings->setting[i], "function")) {
 			enum sycout_green_dimension dim;
 			j = 0;
@@ -208,6 +215,10 @@ void sycout_green_init_run(void) {
 					default: break;
 				}
 			}
+
+            if (sycout_green_stokesparams)
+                printf(" x STOKES-PARAMETERS");
+
 			putc('\n', stdout);
 
 			/* Compute size of Green's function and build list of factors */
@@ -249,6 +260,13 @@ void sycout_green_init_run(void) {
 						break;
 				}
 			}
+
+            /* If we are to store Stokes parameters,
+             * rather than just plain intensities, we
+             * multiply the size by the number of Stokes
+             * parameters (4, IQUV) */
+            if (sycout_green_stokesparams)
+                size *= 4;
 
 			/* Generate factors array (eval cumulative product) */
 			for (j = SYCOUT_GREEN_MAXDIMS-2; j >= 0; j--) {
@@ -320,6 +338,12 @@ void sycout_green_step(struct sycout_data *data) {
 		}
 	}
 
+	/* Store Stokes params? There are four
+	 * parameters per parameter-space point,
+	 * so multiply index by 4. */
+	if (sycout_green_stokesparams)
+		index *= 4;
+
 	/* Compute differential element */
 	double diffel = data->RdPhi * data->Jdtdrho * data->Jp;
 	if (sycout_green_weighWdf) diffel *= data->distribution_function;
@@ -329,7 +353,12 @@ void sycout_green_step(struct sycout_data *data) {
 
 	/* Set value of Green's function */
 	if (sycout_green_haswav) {
-		double *spectrum = sycamera_get_spectrum();
+        double *spectrum=NULL, **polspec=NULL;
+        if (sycout_green_stokesparams)
+            polspec = sycamera_get_polarization_spectrum();
+        else
+            spectrum = sycamera_get_spectrum();
+
 		/* If we have to weigh with the distribution function,
 		 * then any or all of rho, vel1 and vel2 are NOT part
 		 * of the Green's function. That implies that two threads
@@ -338,18 +367,40 @@ void sycout_green_step(struct sycout_data *data) {
 		if (sycout_green_weighWdf) {
 			#pragma omp critical
 			{
-				for (i = 0; i < sycout_green_nwav; i++) {
-					sycout_green_func[index+i] += spectrum[i] * diffel;
-					index += sycout_green_factors[wavindex];
-				}
+                if (sycout_green_stokesparams) {
+                    for (i = 0; i < sycout_green_nwav; i++) {
+                        sycout_green_func[index+4*i+0] += polspec[0][i] * diffel;
+                        sycout_green_func[index+4*i+1] += polspec[1][i] * diffel;
+                        sycout_green_func[index+4*i+2] += polspec[2][i] * diffel;
+                        sycout_green_func[index+4*i+3] += polspec[3][i] * diffel;
+                    }
+                } else {
+                    for (i = 0; i < sycout_green_nwav; i++) {
+                        sycout_green_func[index+i] += spectrum[i] * diffel;
+                        index += sycout_green_factors[wavindex];
+                    }
+                }
 			}
 		} else {
-			for (i = 0; i < sycout_green_nwav; i++) {
-				sycout_green_func[index+i] += spectrum[i] * diffel;
-				index += sycout_green_factors[wavindex];
-			}
+            if (sycout_green_stokesparams) {
+                for (i = 0; i < sycout_green_nwav; i++) {
+                    sycout_green_func[index+4*i+0] += polspec[0][i] * diffel;
+                    sycout_green_func[index+4*i+1] += polspec[1][i] * diffel;
+                    sycout_green_func[index+4*i+2] += polspec[2][i] * diffel;
+                    sycout_green_func[index+4*i+3] += polspec[3][i] * diffel;
+                }
+            } else {
+                for (i = 0; i < sycout_green_nwav; i++) {
+                    sycout_green_func[index+i] += spectrum[i] * diffel;
+                    index += sycout_green_factors[wavindex];
+                }
+            }
 		}
 	} else {
+        double *stokp=NULL;
+        if (sycout_green_stokesparams)
+            stokp = sycamera_get_polarization();
+
 		/* If we have to weigh with the distribution function,
 		 * then any or all of rho, vel1 and vel2 are NOT part
 		 * of the Green's function. That implies that two threads
@@ -358,10 +409,23 @@ void sycout_green_step(struct sycout_data *data) {
 		if (sycout_green_weighWdf) {
 			#pragma omp critical
 			{
-				sycout_green_func[index] += data->brightness * diffel;
+                if (sycout_green_stokesparams) {
+                    sycout_green_func[index+0] += stokp[0];
+                    sycout_green_func[index+1] += stokp[1];
+                    sycout_green_func[index+2] += stokp[2];
+                    sycout_green_func[index+3] += stokp[3];
+                } else
+                    sycout_green_func[index] += data->brightness * diffel;
 			}
 		} else {
-			sycout_green_func[index] += data->brightness * diffel;
+            if (sycout_green_stokesparams) {
+                sycout_green_func[index+0] += stokp[0];
+                sycout_green_func[index+1] += stokp[1];
+                sycout_green_func[index+2] += stokp[2];
+                sycout_green_func[index+3] += stokp[3];
+            } else {
+                sycout_green_func[index] += data->brightness * diffel;
+            }
 		}
 	}
 }
@@ -504,6 +568,9 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 
 		/* Actual Green's function */
 		sf->write_list(sf, "func", sycout_green_func, sycout_green_func_sz);
+
+        /* Write Stokes parameter flag */
+        sf->write_attribute_scalar(sf, "func", "stokesparameters", sycout_green_stokesparams);
 
 		sf->close(sf);
 
