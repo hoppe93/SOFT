@@ -346,7 +346,6 @@ int sycamera_stop_condition(void) {
 
 void sycamera_step(ode_solution *solver_object, step_data *sd) {
 	double x0=sd->x, y0=sd->y, vx=sd->vx, vy=sd->vy, r = hypot(x0, y0);
-
 	(*intensity_init_step)(sd);
 
 	int i;
@@ -389,6 +388,7 @@ void sycamera_register_radiation(double i, double j, step_data *sd, double inten
 	//data.differential = RdPhi * sd->Jdtdrho * sycamera_particle_diffel;
 	data.RdPhi = RdPhi;
 	data.Jdtdrho = sd->Jdtdrho;
+    //data.Jdtdrho = fabs(sd->vpar) / 0.68 * sd->dt;        /* Form corresponding to f(r) = 1/r * delta(r) */
 	data.Jp = fabs(B_B0 * sycamera_ppar0 / sqrt(sd->ppar2));
 	data.particle_diffel = sycamera_particle_diffel;
 	data.distribution_function = 1;
@@ -396,7 +396,12 @@ void sycamera_register_radiation(double i, double j, step_data *sd, double inten
 	if (sycamera_has_distfunc)
 		data.distribution_function *= sycamera_distfunc_weight;
 	else {
-		data.distribution_function /= particles_get_differential_factor_current();
+		//data.distribution_function /= particles_get_differential_factor_current();
+		/**
+		 * Setting f = 1 causes problems for delta-function
+		 * distributions, which must be normalized afterwards.
+		 */
+		data.distribution_function = 1;
 	}
 
 	data.i = i;

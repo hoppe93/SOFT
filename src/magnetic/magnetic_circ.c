@@ -95,18 +95,24 @@ vector *magnetic_circ_eval(double x, double y, double z) {
 	/*double theta = atan2(z, x2y2);
 	double phi = atan2(y, x);*/
 
-	double sintheta = z/r, costheta = x2y2/r;
-	double sinphi = y/(mcpar->Rm-r*costheta), cosphi = x/(mcpar->Rm-r*costheta);
-	/*double sinphi = sin(phi), cosphi = cos(phi);
-	double sintheta = sin(theta), costheta = cos(theta);*/
+    if (r != 0) {
+        double sintheta = z/r, costheta = x2y2/r;
+        double sinphi = y/(mcpar->Rm-r*costheta), cosphi = x/(mcpar->Rm-r*costheta);
 
-	double pf = mcpar->B0 / (1 - r*costheta/mcpar->Rm);
-	double t1 = r/(mcpar->q*mcpar->Rm);
-	magnetic_circ_retval->val[0] = pf * (t1 * (sintheta*cosphi) + sinphi);
-	magnetic_circ_retval->val[1] = pf * (t1 * (sintheta*sinphi) - cosphi);
-	magnetic_circ_retval->val[2] = pf * (t1 * costheta);
+        double pf = mcpar->B0 / (1 - r*costheta/mcpar->Rm);
+        double t1 = r/(mcpar->q*mcpar->Rm);
+        magnetic_circ_retval->val[0] = pf * (t1 * (sintheta*cosphi) + sinphi);
+        magnetic_circ_retval->val[1] = pf * (t1 * (sintheta*sinphi) - cosphi);
+        magnetic_circ_retval->val[2] = pf * (t1 * costheta);
+    } else {
+        double sinphi = y/mcpar->Rm, cosphi = x/mcpar->Rm;
 
-	return magnetic_circ_retval;
+        magnetic_circ_retval->val[0] = mcpar->B0 * sinphi;
+        magnetic_circ_retval->val[1] =-mcpar->B0 * cosphi;
+        magnetic_circ_retval->val[2] = 0;
+    }
+
+    return magnetic_circ_retval;
 }
 diff_data *magnetic_circ_diff(double x, double y, double z) {
 	double x2y2 = mcpar->Rm - hypot(x, y);
@@ -114,16 +120,18 @@ diff_data *magnetic_circ_diff(double x, double y, double z) {
 	/* Switch to toroidal coordinates */
 	double r = hypot(z, x2y2);
 
-	double sintheta = z/r, costheta = x2y2/r;
-	double sinphi = y/(mcpar->Rm-r*costheta), cosphi = x/(mcpar->Rm-r*costheta);
+    double sintheta, costheta;
+    if (r != 0) sintheta = z/r, costheta = x2y2/r;
+    else sintheta = 1, costheta = 0;    /* The actual values of these don't matter; dB_dr = dB_dt = 0 anyway */
+	double sinphi = y/(mcpar->Rm-x2y2), cosphi = x/(mcpar->Rm-x2y2);
 
-	double sub = mcpar->Rm/(mcpar->Rm-r*costheta);
+	double sub = mcpar->Rm/(mcpar->Rm-x2y2);
 	double sub2 = sub*sub;
-	double r_qRm = r/(mcpar->q*mcpar->Rm), r_qRm2 = r_qRm*r_qRm;
-	double sqr = sqrt(r_qRm2 + 1);
+	double r_qRm = r/(mcpar->q*mcpar->Rm), r_qRm2 = r_qRm/(mcpar->q*mcpar->Rm);
+	double sqr = sqrt(r*r_qRm2 + 1);
 
 	/* Derivatives of field strength */
-	double dB_dr = mcpar->B0*sub*(costheta*sub/mcpar->Rm*sqr + r_qRm2/(r*sqr));
+	double dB_dr = mcpar->B0*sub*(costheta*sub/mcpar->Rm*sqr + r_qRm2/sqr);
 	double dB_dt =-mcpar->B0*sintheta*sub2*sqr/mcpar->Rm;
 
 	magnetic_circ_gradB->val[0] = -dB_dr*costheta*cosphi + dB_dt*sintheta*cosphi;
@@ -131,12 +139,11 @@ diff_data *magnetic_circ_diff(double x, double y, double z) {
 	magnetic_circ_gradB->val[2] = dB_dr*sintheta + dB_dt*costheta;
 
 	/* Derivatives of field components */
-	double curlB_p = mcpar->B0/(mcpar->q*mcpar->Rm*mcpar->Rm)*(2*mcpar->Rm-r*costheta)*sub2;
+	double curlB_p = mcpar->B0/(mcpar->q*mcpar->Rm*mcpar->Rm)*(2*mcpar->Rm-x2y2)*sub2;
 
 	magnetic_circ_curlB->val[0] =-curlB_p*sinphi;
 	magnetic_circ_curlB->val[1] = curlB_p*cosphi;
-	//magnetic_circ_curlB->val[2] = 2*mcpar->B0*sub2/(mcpar->Rm-r*costheta);
-	magnetic_circ_curlB->val[2] = 0.;
+	magnetic_circ_curlB->val[2] = 0;
 
 	magnetic_circ_diff_dd->B = magnetic_circ_eval(x,y,z);
 	magnetic_circ_diff_dd->Babs = mcpar->B0*sub*sqr;
@@ -152,13 +159,15 @@ diff_data *magnetic_circ_diff_notor(double x, double y, double z) {
 	double r2 = z*z + x2y2*x2y2;
 	double r = sqrt(r2);
 
-	double sintheta = z/r, costheta = x2y2/r;
-	double sinphi = y/(mcpar->Rm-r*costheta), cosphi = x/(mcpar->Rm-r*costheta);
+    double sintheta, costheta;
+    if (r != 0) sintheta = z/r, costheta = x2y2/r;
+    else sintheta = 1, costheta = 0;    /* The actual values of these don't matter; dB_dr = dB_dt = 0 anyway */
+	double sinphi = y/(mcpar->Rm-x2y2), cosphi = x/(mcpar->Rm-x2y2);
 
-	double sub = 1/(mcpar->Rm-r*costheta);
+	double sub = 1/(mcpar->Rm-x2y2);
 	double sub2 = sub*sub;
-	double r_qRm = r/(mcpar->q*mcpar->Rm), r_qRm2 = r_qRm*r_qRm;
-	double sqr = sqrt(r_qRm2 + 1);
+	double r_qRm = r/(mcpar->q*mcpar->Rm), r_qRm2 = r_qRm/(mcpar->q*mcpar->Rm);
+	double sqr = sqrt(r*r_qRm2 + 1);
 
 	/* Derivatives of field strength */
 	double dB_dr = mcpar->B0*mcpar->Rm/mcpar->q*sub2;
@@ -169,7 +178,7 @@ diff_data *magnetic_circ_diff_notor(double x, double y, double z) {
 	magnetic_circ_gradB->val[2] = dB_dr*sintheta + dB_dt*costheta;
 
 	/* Derivatives of field components */
-	double curlB_p = mcpar->B0/(mcpar->q*mcpar->Rm*mcpar->Rm)*(2*mcpar->Rm-r*costheta)*sub2;
+	double curlB_p = mcpar->B0/(mcpar->q*mcpar->Rm*mcpar->Rm)*(2*mcpar->Rm-x2y2)*sub2;
 
 	magnetic_circ_curlB->val[0] =-curlB_p*sinphi;
 	magnetic_circ_curlB->val[1] = curlB_p*cosphi;
@@ -182,3 +191,4 @@ diff_data *magnetic_circ_diff_notor(double x, double y, double z) {
 
 	return magnetic_circ_diff_dd;
 }
+

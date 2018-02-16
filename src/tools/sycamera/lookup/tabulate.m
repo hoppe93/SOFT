@@ -8,7 +8,7 @@ clc; clear;
 
 % PARAMETERS
 VISUALIZE=false;
-OUTPUT=true;
+OUTPUT=false;
 
 SAVEPATH='./';
 

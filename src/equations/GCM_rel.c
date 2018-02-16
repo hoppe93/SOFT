@@ -209,12 +209,12 @@ vector *equation_GCM_rel_eq(double T, vector *Z) {
 	double Beff_par = vdot3(B_eff, bhat);
 
 	/* == > */
-	ppardot = -mu/(gamma*Beff_par) * vdot3(dd->gradB, B_eff);
-
 	if (GCM_rel_nodrifts) {
 		Xdot1 = Z->val[3] / (gamma*m) * bhat->val[0];
 		Xdot2 = Z->val[3] / (gamma*m) * bhat->val[1];
 		Xdot3 = Z->val[3] / (gamma*m) * bhat->val[2];
+
+        ppardot = -mu/gamma * vdot3(dd->gradB, bhat);
 	} else {
 		/***************************
 		* Calculate Xdot1         *
@@ -228,6 +228,8 @@ vector *equation_GCM_rel_eq(double T, vector *Z) {
 		* Calculate Xdot3         *
 		***************************/
 		Xdot3 = 1/(gamma*Beff_par) * (-mu/q*(dd->gradB->val[0]*bhat->val[1] - dd->gradB->val[1]*bhat->val[0]) + Z->val[3]/m * B_eff->val[2]);
+
+        ppardot = -mu/(gamma*Beff_par) * vdot3(dd->gradB, B_eff);
 	}
 
 	vector *retval = GCM_rel_retval;

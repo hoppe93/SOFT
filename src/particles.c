@@ -227,6 +227,10 @@ void particles_init(struct particlespec *spec) {
 	if (particles_rn <= 1 || particles_r0 == particles_r1) particles_dr = 0.;
 	else {
 		particles_dr = (particles_r1-particles_r0)/(particles_rn-1);
+		/* This differential element enters into the factor
+		 * Jdtdrho which is computed numerically in the
+		 * orbit follower.
+		 */
 		//particles_diffel *= fabs(particles_dr);
 	}
 

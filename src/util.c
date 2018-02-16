@@ -73,7 +73,7 @@ double *vpp2v(double vpar, double vperp, double *xyz, double *v) {
 	} else {
 		bhatox = -(bhat->val[1]+bhat->val[2])/bhat->val[0];
 		bhatoy = 1;
-		bhatox = 1;
+		bhatoz = 1;
 	}
 
 	/* Normalize orthogonal vector */
