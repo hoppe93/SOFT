@@ -187,7 +187,7 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 	double vmag = hypot(sd->vpar, sd->vperp);
 	double sinThetap = sd->vperp / vmag;
 	double sin2Thetap = sinThetap*sinThetap;
-	double cosThetap = sd->vpar / vmag;
+	double cosThetap = fabs(sd->vpar / vmag);
 	double cos2Thetap= cosThetap*cosThetap;
 	double cosphi = vdot3(vhat, ddet);
 	double sin2phi = 1-cosphi*cosphi;
@@ -203,7 +203,7 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 	/* Compute semi-axes */
 	double cms = cos2Thetap - sin2phi;
-	double a = fabs((cosThetap*sinThetap*X*cosphi)/cms);
+	double a = (cosThetap*sinThetap*X*cosphi)/cms;
 	double b = (sinThetap*X*cosphi)/sqrt(fabs(cms));
 	double ola=-sin2Thetap/cms*X*sinphi;
 	double x0=-ola*cosxi;
@@ -215,11 +215,12 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 	//double yhit = xhitv->val[0]*ddet->val[2] + xhitv->val[1]*e1->val[2] + xhitv->val[2]*e2->val[2];
 
 	/* Check if we're on the right solution */
+	double t = -sinThetap*sinphi / cms * (cosThetap*cosphi + sinThetap*sinphi);
 	if (cosphi < 0) {
-		if ((a-ola)*sinphi > X) return 0;
-	} else if ((a-ola)*sinphi < X || cms > 0) return 0;
-
-	//printf("X = %e, sinphi = %e, cms = %e, sin2Thetapola = %e\n", X, sinphi, cms, ola);
+		if (t > 1.0) return 0;
+	} else if (t < 1.0 || cms > 0) {
+		return 0;
+	}
 
 	double x1;
 
@@ -230,11 +231,17 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 		x1 = a*cost*cosxi + b*sint*sinxi;
 	} else {	/* Hyperbola */
+		return 1;
+		/*
 		double tanht = -b/a*tanxi, tanht2 = tanht*tanht;
 		double cosht = 1/sqrt(1-tanht2);
 		double sinht = tanht*cosht;
 
+		if (tanht2 > 1)
+			printf("a = %e, b = %e, tanht = %e, tanxi = %e\n", a, b, tanht, tanxi);
+
 		x1 = a*cosht*cosxi + b*sinht*sinxi;
+		*/
 	}
 
 	double s1 = xhit+x0+x1, s2 = xhit+x0-x1;
@@ -412,12 +419,9 @@ double cone_dist_get_intensity(
 	//if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
 	//	return 0.0;
 
-    if (cone_dist_nint > 1)
-        dX = rdet / ((double)(cone_dist_nint-1));
-    else
-        dX = rdet;
-
+    dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
     dX2 = dX+dX;
+
     /* The 9 is from Simpson's rule (and is really a 3^2) */
 	fac = dX*dX*weight / (9.0*r2);
 
