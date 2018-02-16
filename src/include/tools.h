@@ -16,6 +16,7 @@ typedef struct {
 	double vx, vy, vz;		/* Guiding-center velocity vector */
 	double vpar, vperp;		/* Particle velocity components */
 	double Jdtdrho;			/* Jacobian * timestep * radial step */
+    double dt;              /* Time-step */
 } step_data;
 
 typedef struct {

@@ -10,7 +10,6 @@
 #include <math.h>
 #include <omp.h>
 #include <stdlib.h>
-#include "counter.h"
 #include "global.h"
 #include "sycamera.h"
 #include "tools.h"
@@ -21,7 +20,7 @@ double rdet;
 #endif
 
 enum sycamera_radiation_type cone_dist_radt;
-int cone_dist_nint=3, cone_dist_nwavelengths, COUNTER_ONE, COUNTER_TWO;
+int cone_dist_nint=3, cone_dist_nwavelengths;
 double cone_dist_prefactor, cone_dist_preprefactor,
        cone_dist_charge, cone_dist_mass, cone_dist_speed, cone_dist_beta,
 	   cone_dist_beta2, cone_dist_gammai2, cone_dist_gamma3, cone_dist_costheta,
@@ -48,7 +47,7 @@ double (*Ihat)(double,double,double)=NULL;
 	cone_dist_betapar2, cone_dist_betaperp2, cone_dist_gammapar2, \
 	cone_dist_betapar, cone_dist_betaperp, cone_dist_polarization, \
 	cone_dist_polcosa, cone_dist_polsina, cone_dist_spectrum, \
-	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum, COUNTER_ONE, COUNTER_TWO)
+	cone_dist_gamma, cone_dist_gamma2, cone_dist_polarization_spectrum)
 
 double cone_dist_Ihat_benchmark(double sinmu, double cosmu, double sinmu2) {
 #define CONEWIDTH 0.036
@@ -117,9 +116,6 @@ void cone_dist_init_run(void) {
 	cone_dist_polarization_spectrum[1] = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization_spectrum[2] = malloc(sizeof(double)*cone_dist_nwavelengths);
 	cone_dist_polarization_spectrum[3] = malloc(sizeof(double)*cone_dist_nwavelengths);
-
-	COUNTER_ONE = counter_create("one");
-	COUNTER_TWO = counter_create("two");
 }
 
 /**
@@ -141,7 +137,7 @@ void cone_dist_init_particle(particle *p) {
 		sycamera_pdist_init_particle(p->mass);
 	else if (cone_dist_radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
 		double beta2 = (p->vpar*p->vpar + p->vperp*p->vperp) / (LIGHTSPEED*LIGHTSPEED);
-		double p0 = p->mass * sqrt(beta2 / (1 - beta2));
+		double p0 = p->mass * LIGHTSPEED * sqrt(beta2 / (1 - beta2));
 		sycamera_bremsdist_init_particle(p->mass, p0);
 	}
 }
@@ -369,31 +365,31 @@ double cone_dist_integrateY(
 	double factor	/* Numerical integration factor * geometric factor */
 ) {
     int i;
-    double Y, cosmu, sinmu, sinmu2, dY2, s;
+    double Y, cosmu, sinmu, sinmu2, dY2, s, rdet2 = rdet*0.5;
 
 	factor *= cone_dist_dwavelength;
     dY2 = dY+dY;
 
     /* Simpson's rule */
-    cone_dist_get_angles(X, -rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
+    cone_dist_get_angles(X, -rdet2, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s = (*Ihat)(sinmu, cosmu, sinmu2);
 	cone_dist_add_spectrum_and_polarization(factor);
 
-    cone_dist_get_angles(X, +rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
+    cone_dist_get_angles(X, +rdet2, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s += (*Ihat)(sinmu, cosmu, sinmu2);
 	cone_dist_add_spectrum_and_polarization(factor);
 
-    for (i = 1, Y = -rdet + dY; i < cone_dist_nint; i += 2, Y += dY2) {
+    for (i = 1, Y = -rdet2 + dY; i < cone_dist_nint; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 4.0 * (*Ihat)(sinmu, cosmu, sinmu2);
-		cone_dist_add_spectrum_and_polarization(factor);
+		cone_dist_add_spectrum_and_polarization(4.0 * factor);
     }
-    for (i = 2, Y = -rdet + dY2; i < cone_dist_nint-1; i += 2, Y += dY2) {
+    for (i = 2, Y = -rdet2 + dY2; i < cone_dist_nint-1; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 2.0 * (*Ihat)(sinmu, cosmu, sinmu2);
-		cone_dist_add_spectrum_and_polarization(factor);
+		cone_dist_add_spectrum_and_polarization(2.0 * factor);
     }
 
     return s;
@@ -410,31 +406,32 @@ double cone_dist_get_intensity(
     int i;
     double X, dX, dX2, s,
 		r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2],
-		weight = vdot3(rcp, ddet) / sqrt(r2), fac;
-
-	counter_inc(COUNTER_ONE);
+		weight = vdot3(rcp, ddet) / sqrt(r2), fac, rdet2=rdet*0.5;
 
     //if (!cone_dist_can_radiation_hit2(sd, empty1, empty2))
-	if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
-		return 0.0;
-	
-	counter_inc(COUNTER_TWO);
+	//if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
+	//	return 0.0;
 
-    dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
+    if (cone_dist_nint > 1)
+        dX = rdet / ((double)(cone_dist_nint-1));
+    else
+        dX = rdet;
+
     dX2 = dX+dX;
+    /* The 9 is from Simpson's rule (and is really a 3^2) */
 	fac = dX*dX*weight / (9.0*r2);
 
 	cone_dist_reset_spectrum();
 	cone_dist_reset_polarization();
 
     /* Simpson's rule */
-    s = cone_dist_integrateY(-rdet, dX, rcp, vhat, fac) +
-        cone_dist_integrateY(rdet, dX, rcp, vhat, fac);
+    s = cone_dist_integrateY(-rdet2, dX, rcp, vhat, fac) +
+        cone_dist_integrateY(rdet2, dX, rcp, vhat, fac);
 
-    for (i = 1, X = -rdet + dX; i < cone_dist_nint; i += 2, X += dX2) {
+    for (i = 1, X = -rdet2 + dX; i < cone_dist_nint; i += 2, X += dX2) {
         s += 4.0 * cone_dist_integrateY(X, dX, rcp, vhat, 4.0*fac);
     }
-    for (i = 2, X = -rdet + dX2; i < cone_dist_nint-1; i += 2, X += dX2) {
+    for (i = 2, X = -rdet2 + dX2; i < cone_dist_nint-1; i += 2, X += dX2) {
         s += 2.0 * cone_dist_integrateY(X, dX, rcp, vhat, 2.0*fac);
     }
 

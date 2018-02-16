@@ -127,13 +127,18 @@ ode_solution* ode_solve(vector *(*equation)(double, vector*), ode_solution *solv
 	vector *Zhat = vaddf(sum2, Z);
 
 	/* calculate relative error epsilon for each component,
-	* save the largest error value */
+	 * save the largest error value */
 	/* Calculate the maximum error made */
+    double Zhateps = Zhat->val[0];
 	eps = fabs((Zhat->val[0] - Z_next->val[0]) /  Z_next->val[0]);
 	for (i = 1; i < Z_next->n; i++) {
 		epst = fabs((Zhat->val[i] - Z_next->val[i]) / Z_next->val[i]);
 		if (epst > eps) {
-			eps = epst;
+            if (eps / epst < 1e-6 && fabs(Zhateps / Zhat->val[i]) > 1e6) continue;
+            else {
+                eps = epst;
+                Zhateps = Zhat->val[i];
+            }
 		}
 	}
 	hopt = h; /* Optimal step size */
