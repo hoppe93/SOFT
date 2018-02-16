@@ -97,6 +97,7 @@ void tool_update_position(double x, double y, double z) {
 }
 void tool_step(ode_solution *solver_object, double Jdtdrho) {
 	TOOL_STEPDATA->Jdtdrho = Jdtdrho;
+    TOOL_STEPDATA->dt = solver_object->actualstep;
 	selected_tool->step(solver_object, TOOL_STEPDATA);
 }
 

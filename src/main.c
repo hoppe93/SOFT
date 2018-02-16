@@ -217,7 +217,7 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 	double current_time = p->t0,
 		dR_dt, dR_drho, dZ_dt, dZ_drho, Jdtdrho=1, drho = particles_get_drho();
 	int steps = 0;
-
+    
 	/* Since the equation used may displace the solver object slightly (such as if we're
 	 * following a GC orbit and specify the particle position), we should use 'solver_object->Z->val[...]'
 	 * instead of 'p->r0[...]' to calculate the initial particle position */
@@ -364,7 +364,7 @@ void run_particles(int threadid, int nthreads, int mpi_rank, int nprocesses, voi
 
 		avtime += partime;
 	}
-
+	
 	usetool->deinit_run();
 	//diag_deinit();
 

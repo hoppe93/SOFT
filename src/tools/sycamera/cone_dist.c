@@ -137,7 +137,7 @@ void cone_dist_init_particle(particle *p) {
 		sycamera_pdist_init_particle(p->mass);
 	else if (cone_dist_radt == SYCAMERA_RADIATION_BREMSSTRAHLUNG_SPECTRUM) {
 		double beta2 = (p->vpar*p->vpar + p->vperp*p->vperp) / (LIGHTSPEED*LIGHTSPEED);
-		double p0 = p->mass * sqrt(beta2 / (1 - beta2));
+		double p0 = p->mass * LIGHTSPEED * sqrt(beta2 / (1 - beta2));
 		sycamera_bremsdist_init_particle(p->mass, p0);
 	}
 }
@@ -187,7 +187,7 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 	double vmag = hypot(sd->vpar, sd->vperp);
 	double sinThetap = sd->vperp / vmag;
 	double sin2Thetap = sinThetap*sinThetap;
-	double cosThetap = sd->vpar / vmag;
+	double cosThetap = fabs(sd->vpar / vmag);
 	double cos2Thetap= cosThetap*cosThetap;
 	double cosphi = vdot3(vhat, ddet);
 	double sin2phi = 1-cosphi*cosphi;
@@ -203,7 +203,7 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 	/* Compute semi-axes */
 	double cms = cos2Thetap - sin2phi;
-	double a = fabs((cosThetap*sinThetap*X*cosphi)/cms);
+	double a = (cosThetap*sinThetap*X*cosphi)/cms;
 	double b = (sinThetap*X*cosphi)/sqrt(fabs(cms));
 	double ola=-sin2Thetap/cms*X*sinphi;
 	double x0=-ola*cosxi;
@@ -215,9 +215,12 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 	//double yhit = xhitv->val[0]*ddet->val[2] + xhitv->val[1]*e1->val[2] + xhitv->val[2]*e2->val[2];
 
 	/* Check if we're on the right solution */
+	double t = -sinThetap*sinphi / cms * (cosThetap*cosphi + sinThetap*sinphi);
 	if (cosphi < 0) {
-		if ((a-ola)*sinphi > X) return 0.0;
-	} else if ((a-ola)*sinphi < X || cms > 0) return 0.0;
+		if (t > 1.0) return 0;
+	} else if (t < 1.0 || cms > 0) {
+		return 0;
+	}
 
 	double x1;
 
@@ -228,11 +231,17 @@ int cone_dist_can_radiation_hit(step_data *sd, vector *temp1, vector *temp2, vec
 
 		x1 = a*cost*cosxi + b*sint*sinxi;
 	} else {	/* Hyperbola */
+		return 1;
+		/*
 		double tanht = -b/a*tanxi, tanht2 = tanht*tanht;
 		double cosht = 1/sqrt(1-tanht2);
 		double sinht = tanht*cosht;
 
+		if (tanht2 > 1)
+			printf("a = %e, b = %e, tanht = %e, tanxi = %e\n", a, b, tanht, tanxi);
+
 		x1 = a*cosht*cosxi + b*sinht*sinxi;
+		*/
 	}
 
 	double s1 = xhit+x0+x1, s2 = xhit+x0-x1;
@@ -363,31 +372,31 @@ double cone_dist_integrateY(
 	double factor	/* Numerical integration factor * geometric factor */
 ) {
     int i;
-    double Y, cosmu, sinmu, sinmu2, dY2, s;
+    double Y, cosmu, sinmu, sinmu2, dY2, s, rdet2 = rdet*0.5;
 
 	factor *= cone_dist_dwavelength;
     dY2 = dY+dY;
 
     /* Simpson's rule */
-    cone_dist_get_angles(X, -rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
+    cone_dist_get_angles(X, -rdet2, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s = (*Ihat)(sinmu, cosmu, sinmu2);
 	cone_dist_add_spectrum_and_polarization(factor);
 
-    cone_dist_get_angles(X, +rdet, rcp, vhat, &cosmu, &sinmu, &sinmu2);
+    cone_dist_get_angles(X, +rdet2, rcp, vhat, &cosmu, &sinmu, &sinmu2);
     s += (*Ihat)(sinmu, cosmu, sinmu2);
 	cone_dist_add_spectrum_and_polarization(factor);
 
-    for (i = 1, Y = -rdet + dY; i < cone_dist_nint; i += 2, Y += dY2) {
+    for (i = 1, Y = -rdet2 + dY; i < cone_dist_nint; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 4.0 * (*Ihat)(sinmu, cosmu, sinmu2);
-		cone_dist_add_spectrum_and_polarization(factor);
+		cone_dist_add_spectrum_and_polarization(4.0 * factor);
     }
-    for (i = 2, Y = -rdet + dY2; i < cone_dist_nint-1; i += 2, Y += dY2) {
+    for (i = 2, Y = -rdet2 + dY2; i < cone_dist_nint-1; i += 2, Y += dY2) {
         cone_dist_get_angles(X, Y, rcp, vhat, &cosmu, &sinmu, &sinmu2);
 
         s += 2.0 * (*Ihat)(sinmu, cosmu, sinmu2);
-		cone_dist_add_spectrum_and_polarization(factor);
+		cone_dist_add_spectrum_and_polarization(2.0 * factor);
     }
 
     return s;
@@ -404,27 +413,29 @@ double cone_dist_get_intensity(
     int i;
     double X, dX, dX2, s,
 		r2 = rcp->val[0]*rcp->val[0] + rcp->val[1]*rcp->val[1] + rcp->val[2]*rcp->val[2],
-		weight = vdot3(rcp, ddet) / sqrt(r2), fac;
+		weight = vdot3(rcp, ddet) / sqrt(r2), fac, rdet2=rdet*0.5;
 
-    if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
     //if (!cone_dist_can_radiation_hit2(sd, empty1, empty2))
-        return 0.0;
+	//if (!cone_dist_can_radiation_hit(sd, empty1, empty2, empty3))
+	//	return 0.0;
 
     dX = 2.0 * rdet / ((double)(cone_dist_nint - 1));
     dX2 = dX+dX;
+
+    /* The 9 is from Simpson's rule (and is really a 3^2) */
 	fac = dX*dX*weight / (9.0*r2);
 
 	cone_dist_reset_spectrum();
 	cone_dist_reset_polarization();
 
     /* Simpson's rule */
-    s = cone_dist_integrateY(-rdet, dX, rcp, vhat, fac) +
-        cone_dist_integrateY(rdet, dX, rcp, vhat, fac);
+    s = cone_dist_integrateY(-rdet2, dX, rcp, vhat, fac) +
+        cone_dist_integrateY(rdet2, dX, rcp, vhat, fac);
 
-    for (i = 1, X = -rdet + dX; i < cone_dist_nint; i += 2, X += dX2) {
+    for (i = 1, X = -rdet2 + dX; i < cone_dist_nint; i += 2, X += dX2) {
         s += 4.0 * cone_dist_integrateY(X, dX, rcp, vhat, 4.0*fac);
     }
-    for (i = 2, X = -rdet + dX2; i < cone_dist_nint-1; i += 2, X += dX2) {
+    for (i = 2, X = -rdet2 + dX2; i < cone_dist_nint-1; i += 2, X += dX2) {
         s += 2.0 * cone_dist_integrateY(X, dX, rcp, vhat, 2.0*fac);
     }
 

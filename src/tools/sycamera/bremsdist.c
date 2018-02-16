@@ -55,7 +55,7 @@ void sycamera_bremsdist_init(double k0, double k1, int spectrum_resolution) {
 
 	sycamera_bremsdist_wavelengths[0] = k0;
 
-	for (i = 0; i < sycamera_bremsdist_spectrum_resolution; i++) {
+	for (i = 1; i < sycamera_bremsdist_spectrum_resolution; i++) {
 		sycamera_bremsdist_wavelengths[i] = sycamera_bremsdist_wavelengths[i-1] + dk;
 	}
 }
@@ -91,7 +91,7 @@ void sycamera_bremsdist_init_particle(double mass, double p0) {
 	double alpha = CHARGE*CHARGE / (4.0*PI*EPS0*PLANCKHBAR*LIGHTSPEED);
 
 	sycamera_bremsdist_prefactor =
-		sycamera_zeff*sycamera_zeff*r0*r0*alpha / (8.0*PI*p0);
+		sycamera_zeff*sycamera_zeff*r0*r0*alpha*mass*LIGHTSPEED / (8.0*PI*p0);
 }
 
 void sycamera_bremsdist_evalZ(double x, double y) {
@@ -146,7 +146,7 @@ double sycamera_bremsdist_int(
 		avDelta02 = xi_kappa2 * P1,
 		avQ2Delta02, avSin2aDelta04;
 	
-	if (sinmu > 0) {
+	if (sinmu != 0) {
 		avSin2aDelta04 =
 			c0 * xi_kappa2*xi_kappa2 * P3 -
 			c1 * xi_kappa2*xi_kappa/(kappa*eta) * (xi*P3 - P2) -
@@ -173,7 +173,7 @@ double sycamera_bremsdist_int(
 
 		pp0 = p*p0;
 		L = 2*log((EE0-1+pp0)/k);
-		epsilon = 2*log(E0+p);
+		epsilon = 2*log(E+p);
 
 		x = eta;
 		y = kkappa2 / (p2 + kkappa2);
@@ -201,8 +201,6 @@ double sycamera_bremsdist_int(
 		T[10] =-(6*k/(p2*kappa)) * Zeta11;
 		T[11] =-2*k*(p02-k2) / (p4*kappa) * Zeta21;
 		TT3   = T[9]+T[10]+T[11];
-
-		Ttot = TT1 + TT2 + TT3 + T[8];
 
 		Ttot = sycamera_bremsdist_prefactor * (p/k) * LIGHTSPEED*beta *
 			(TT1 + (L/(p*p0))*TT2 + TT3 + T[8]);

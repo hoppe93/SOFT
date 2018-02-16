@@ -39,7 +39,7 @@ size_t sycout_green_factors[SYCOUT_GREEN_MAXDIMS];
 char *sycout_green_output;
 enum sfile_type sycout_green_outformat;
 double sycout_green_dlambda;
-double *sycout_green_func;
+double *sycout_green_func;      /* Green's function */
 
 void sycout_green_init(struct general_settings *settings) {
 	sycout_green_outformat = FILETYPE_SDT;
@@ -223,8 +223,9 @@ void sycout_green_init_run(void) {
 
 			/* Compute size of Green's function and build list of factors */
 			size_t size = 1;
-			for (i = 0; i < SYCOUT_GREEN_MAXDIMS; i++)
+			for (i = 0; i < SYCOUT_GREEN_MAXDIMS; i++) {
 				sycout_green_factors[i] = 1;
+            }
 
 			for (j = SYCOUT_GREEN_MAXDIMS-1; j >= 0; j--) {
 				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
@@ -271,7 +272,9 @@ void sycout_green_init_run(void) {
 			/* Generate factors array (eval cumulative product) */
 			for (j = SYCOUT_GREEN_MAXDIMS-2; j >= 0; j--) {
 				if (sycout_green_format[j] == SYCOUT_GREEN_NONE) continue;
-				else sycout_green_factors[j] *= sycout_green_factors[j+1];
+				else {
+                    sycout_green_factors[j] *= sycout_green_factors[j+1];
+                }
 			}
 
 			/* Print note about how much memory is required */
@@ -304,11 +307,20 @@ void sycout_green_init_particle(particle *p) {
 }
 
 void sycout_green_deinit_run(void) {}
-void sycout_green_step(struct sycout_data *data) {
+
+/**
+ * Compute the index of the Green's function
+ * corresponding to the current integration-space
+ * point.
+ *
+ * data:     Step data (containing information about the integrand)
+ * index:    Contains the Green's function index on return
+ * wavindex: Contains the Green's function index of the first wavelength on return.
+ */
+void sycout_green_get_index(struct sycout_data *data, size_t *index, size_t *wavindex) {
 	size_t I = (size_t)(data->i*sycout_green_pixels),
-		J = (size_t)(data->j*sycout_green_pixels),
-		index = 0, wavindex = 0;
-	
+		J = (size_t)(data->j*sycout_green_pixels);
+
 	if (sycout_green_pixels > 0) {
 		if (I < sycout_green_suboffseti || I >= sycout_green_subpixels+sycout_green_suboffseti)
 			return;
@@ -323,12 +335,12 @@ void sycout_green_step(struct sycout_data *data) {
 	size_t i;
 	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
 		switch (sycout_green_format[i]) {
-			case SYCOUT_GREEN_VEL1: index += sycout_green_ivel1*sycout_green_factors[i]; break;
-			case SYCOUT_GREEN_VEL2: index += sycout_green_ivel2*sycout_green_factors[i]; break;
-			case SYCOUT_GREEN_IMAGEI: index += I*sycout_green_factors[i]; break;
-			case SYCOUT_GREEN_IMAGEJ: index += J*sycout_green_factors[i]; break;
-			case SYCOUT_GREEN_RADIUS: index += sycout_green_irad*sycout_green_factors[i]; break;
-			case SYCOUT_GREEN_SPECTRUM: wavindex = i; break;
+			case SYCOUT_GREEN_VEL1: *index += sycout_green_ivel1*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_VEL2: *index += sycout_green_ivel2*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_IMAGEI: *index += I*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_IMAGEJ: *index += J*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_RADIUS: *index += sycout_green_irad*sycout_green_factors[i]; break;
+			case SYCOUT_GREEN_SPECTRUM: *wavindex = i; break;
 			default: fprintf(
 					stderr,
 					"ERROR: (sycout green): Unrecognized GF dimension: %d. Ignoring when computing index.\n",
@@ -337,6 +349,11 @@ void sycout_green_step(struct sycout_data *data) {
 				break;
 		}
 	}
+}
+
+void sycout_green_step(struct sycout_data *data) {
+    size_t index = 0, wavindex = 0, i;
+    sycout_green_get_index(data, &index, &wavindex);
 
 	/* Store Stokes params? There are four
 	 * parameters per parameter-space point,
@@ -346,10 +363,15 @@ void sycout_green_step(struct sycout_data *data) {
 
 	/* Compute differential element */
 	double diffel = data->RdPhi * data->Jdtdrho * data->Jp;
+
 	if (sycout_green_weighWdf) diffel *= data->distribution_function;
-	if (sycout_green_hasrho && particles_get_drho() != 0) diffel /= fabs(particles_get_drho());
 	if (!sycout_green_hasvel1 && particles_get_dvel1() != 0) diffel *= fabs(particles_get_dvel1());
 	if (!sycout_green_hasvel2 && particles_get_dvel2() != 0) diffel *= fabs(particles_get_dvel2());
+	if (sycout_green_hasrho && particles_get_drho() != 0) diffel /= fabs(particles_get_drho());
+	/* Also, if we have both of d^2p we must multiply by the momentum space Jacobian */
+	if (!sycout_green_hasvel1 && !sycout_green_hasvel2) {
+		diffel *= particles_get_differential_factor_current();
+	}
 
 	/* Set value of Green's function */
 	if (sycout_green_haswav) {
