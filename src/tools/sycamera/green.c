@@ -442,20 +442,20 @@ void sycout_green_step(struct sycout_data *data) {
 			#pragma omp critical
 			{
                 if (sycout_green_stokesparams) {
-                    sycout_green_func[index+0] += stokp[0];
-                    sycout_green_func[index+1] += stokp[1];
-                    sycout_green_func[index+2] += stokp[2];
-                    sycout_green_func[index+3] += stokp[3];
+                    sycout_green_func[index+0] += stokp[0] * diffel;
+                    sycout_green_func[index+1] += stokp[1] * diffel;
+                    sycout_green_func[index+2] += stokp[2] * diffel;
+                    sycout_green_func[index+3] += stokp[3] * diffel;
                 } else {
                     sycout_green_func[index] += data->brightness * diffel;
                 }
 			}
 		} else {
             if (sycout_green_stokesparams) {
-                sycout_green_func[index+0] += stokp[0];
-                sycout_green_func[index+1] += stokp[1];
-                sycout_green_func[index+2] += stokp[2];
-                sycout_green_func[index+3] += stokp[3];
+                sycout_green_func[index+0] += stokp[0] * diffel;
+                sycout_green_func[index+1] += stokp[1] * diffel;
+                sycout_green_func[index+2] += stokp[2] * diffel;
+                sycout_green_func[index+3] += stokp[3] * diffel;
             } else {
                 sycout_green_func[index] += data->brightness * diffel;
             }
