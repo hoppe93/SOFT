@@ -7,15 +7,22 @@
 #include <string.h>
 #include "constants.h"
 #include "distfunc.h"
+#include "particles.h"
 #include "sfile.h"
 
 distfunc *distfunc_function;
+int distfunc_include_drifts=0;
 
-void distfunc_init_run(void) {
+void distfunc_init_run(int include_drifts) {
+    distfunc_include_drifts = include_drifts;
     df_interp_init_run();
 }
 double distfunc_eval(double r, double xi, double p) {
-    return df_interp_eval(r,xi,p);
+    if (distfunc_include_drifts) {
+        double dr = particles_get_orbit_drift_shift();
+        return df_interp_eval(r-dr, xi, p);
+    } else
+        return df_interp_eval(r, xi, p);
 }
 void distfunc_load(const char *filename) {
 	sFILE *sf;
@@ -69,6 +76,7 @@ void distfunc_load(const char *filename) {
 	distfunc_function->ximax 	= distfunc_function->xi[distfunc_function->nxi-1];
 	distfunc_function->pmin 	= distfunc_function->p[0];
 	distfunc_function->pmax 	= distfunc_function->p[distfunc_function->np-1];
+    distfunc_function->logarithmic = 0;
 
 	if (!strcmp(punits, "ev")) {
 		distfunc_function->pmin *= MOMENTUM;
@@ -104,7 +112,7 @@ void distfunc_load(const char *filename) {
 
 	sf->close(sf);
 
-    df_interp_init(distfunc_function);
+    df_interp_init(distfunc_function, 1);
     printf("Loaded distribution function from '%s'.\n", filename);
     df_readfile_unload();
 }

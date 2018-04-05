@@ -32,7 +32,14 @@ distfunc *df_interp_f;
 
 #pragma omp threadprivate(df_interp_accelerators_t,df_interp_accelerators_p,df_interp_splines)
 
-void df_interp_init(distfunc *f) {
+/**
+ * Initialize the distribution function interpolation system.
+ *
+ * f:           Distribution function
+ * logarithmic: If non-zero, take the logarithm of f and interpolate in that.
+ */
+void df_interp_init(distfunc *f, int logarithmic) {
+    size_t i, j;
 	gsl_set_error_handler(df_interp_error_handler);
 	df_interp_dr = 0;
 	df_interp_f = f;
@@ -42,6 +49,20 @@ void df_interp_init(distfunc *f) {
 	df_interp_pmin = f->pmin, df_interp_pmax = f->pmax;
 
 	if (f->nr > 1) df_interp_dr = (f->rmax-f->rmin)/(f->nr-1);
+
+    if (logarithmic && !f->logarithmic) {
+        double v;
+        for (i = 0; i < f->nr; i++) {
+            for (j = 0; j < f->np*f->nxi; j++) {
+                /*if (f->value[i][j] <= 0)
+                    f->value[i][j] = -INFINITY;
+                else*/
+                v = log(fabs(f->value[i][j]));
+                f->value[i][j] = v;
+            }
+        }
+        f->logarithmic = 1;
+    }
 }
 void df_interp_init_run(void) {
 	df_interp_accelerators_t = (gsl_interp_accel**)malloc(sizeof(gsl_interp_accel*)*df_interp_f->nr);
@@ -52,7 +73,8 @@ void df_interp_init_run(void) {
 	for (r = 0; r < df_interp_f->nr; r++) {
 		df_interp_accelerators_t[r] = gsl_interp_accel_alloc();
 		df_interp_accelerators_p[r] = gsl_interp_accel_alloc();
-		df_interp_splines[r] = gsl_spline2d_alloc(gsl_interp2d_bicubic, df_interp_f->np, df_interp_f->nxi);
+		//df_interp_splines[r] = gsl_spline2d_alloc(gsl_interp2d_bicubic, df_interp_f->np, df_interp_f->nxi);
+		df_interp_splines[r] = gsl_spline2d_alloc(gsl_interp2d_bilinear, df_interp_f->np, df_interp_f->nxi);
 
 		gsl_spline2d_init(df_interp_splines[r], df_interp_f->p, df_interp_f->xi, df_interp_f->value[r], df_interp_f->np, df_interp_f->nxi);
 	}
@@ -61,16 +83,19 @@ void df_interp_init_run(void) {
 double df_interp_eval(double r, double xi, double p) {
 	/* Check input */
 	if (r < df_interp_rmin || r > df_interp_rmax) {
-		fprintf(stderr, "FATAL: Particle located outside distribution function! r = %e, rmin = %e, rmax = %e\n", r, df_interp_rmin, df_interp_rmax);
-		exit(EXIT_FAILURE);
+		//fprintf(stderr, "FATAL: Particle located outside distribution function! r = %e, rmin = %e, rmax = %e\n", r, df_interp_rmin, df_interp_rmax);
+		//exit(EXIT_FAILURE);
+        return 0.0;
 	}
 	if (xi < df_interp_cosmin || xi > df_interp_cosmax) {
-		fprintf(stderr, "FATAL: Particle pitch angle is not within distribution function! cos(theta) = %e\n", xi);
-		exit(EXIT_FAILURE);
+		//fprintf(stderr, "FATAL: Particle pitch angle is not within distribution function! cos(theta) = %e\n", xi);
+		//exit(EXIT_FAILURE);
+        return 0.0;
 	}
 	if (p < df_interp_pmin || p > df_interp_pmax) {
-		fprintf(stderr, "FATAL: Particle momentum is not within distribution function! p = %e, pmin = %e, pmax = %e\n", p, df_interp_pmin, df_interp_pmax);
-		exit(EXIT_FAILURE);
+		//fprintf(stderr, "FATAL: Particle momentum is not within distribution function! p = %e, pmin = %e, pmax = %e\n", p, df_interp_pmin, df_interp_pmax);
+		//exit(EXIT_FAILURE);
+        return 0.0;
 	}
 
 	/* Find closest matches for r and xi */
@@ -81,10 +106,15 @@ double df_interp_eval(double r, double xi, double p) {
 		ir = 0;
 	}
 
-	double v = gsl_spline2d_eval(df_interp_splines[ir], p, xi, df_interp_accelerators_t[ir], df_interp_accelerators_p[ir]);
-	//printf("p = %e, theta = %e, f = %e\n", p, acos(xi), v);
-	//printf("p = %e, pitch = %e,  f = %e\n", p, acos(xi), v);
-	return fabs(v);
+	double v = gsl_spline2d_eval(df_interp_splines[ir], p, xi, df_interp_accelerators_p[ir], df_interp_accelerators_t[ir]);
+    if (df_interp_f->logarithmic) {
+        if (v != v) /* v is nan? */ {
+            return 0.0;
+        } else {
+            return exp(v);
+        }
+    } else
+        return fabs(v);
 }
 
 void df_interp_error_handler(const char *reason, const char *file, int line, int gsl_errno) {

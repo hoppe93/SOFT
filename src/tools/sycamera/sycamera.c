@@ -50,7 +50,8 @@ double sycamera_zeff,			/* Effective plasma charge, used by bremsstrahlung compo
 vector *temps=NULL, *e1, *e2;
 const int NUMBER_OF_TEMPS=7;
 int sycamera_has_distfunc,		/* Whether or not a distribution function is available */
-	sycamera_domain_is_transparent;/* Whether or not the domain is transparent to this type of radiation */
+	sycamera_domain_is_transparent,/* Whether or not the domain is transparent to this type of radiation */
+    sycamera_include_drifts;    /* If not 0, the equations of motion include drift terms. */
 enum sycamera_radiation_type radiation_type=SYCAMERA_RADIATION_SYNCHROTRON;
 
 void (*intensity_init)(enum sycamera_radiation_type, double*, int, int)=NULL;
@@ -74,7 +75,7 @@ double **(*intensity_polarization_spectrum)(void)=NULL;
  * nsycout_settings: Number of lists of settings for sycouts
  *   (i.e. length of 'sycout_set')
  */
-void sycamera_init(struct general_settings *set, struct general_settings *sycout_set, int nsycout_settings) {
+void sycamera_init(settings *globset, struct general_settings *set, struct general_settings *sycout_set, int nsycout_settings) {
 	if (set == NULL) {
 		fprintf(stderr, "ERROR: The sycamera tool requires settings to be given!\n");
 		exit(-1);
@@ -91,6 +92,7 @@ void sycamera_init(struct general_settings *set, struct general_settings *sycout
 	sycamera_has_distfunc = 0;
 
 	sycamera_zeff = 1.0;
+    sycamera_include_drifts = !globset->nodrifts;
 
 	double *lambdas=NULL;
 	int spectrum_resolution=50, integral_resolution=10;
@@ -292,7 +294,8 @@ void sycamera_init_run(unsigned int variables) {
 	/* Initialize camera image */
 	sycout_prepare_run();
 
-	if (sycamera_has_distfunc) distfunc_init_run();
+	if (sycamera_has_distfunc)
+        distfunc_init_run(sycamera_include_drifts);
 
 	(*intensity_init_run)();
 }

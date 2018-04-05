@@ -24,7 +24,7 @@ typedef struct {
 	double tolerance;				/* Recommended ODE Solver accuracy */
 	int require_jacobian;			/* 1 = Requires the Jacobian connecting (R, Z) and (t, rho)
 									   to be computed ni each timestep Two orbits must then be solved */
-	void (*init)(struct general_settings*,struct general_settings*,int);	/* Initialization function */
+	void (*init)(settings*,struct general_settings*,struct general_settings*,int);	/* Initialization function */
 	void (*init_run)(unsigned int);
 	ode_solution *(*init_particle)(particle *p);
 	void (*step)(ode_solution*, step_data*);

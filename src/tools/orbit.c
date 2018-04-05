@@ -22,7 +22,7 @@ vector *solution=NULL;
 char *orbit_output_file=NULL;
 #define DEFAULT_POINTS 1000
 
-void orbit_init(struct general_settings *set, struct general_settings *outset, int nouts) {
+void orbit_init(settings *globset, struct general_settings *set, struct general_settings *outset, int nouts) {
 	/* Parse settings */
 	int i;
 	for (i = 0; i < set->n; i++) {

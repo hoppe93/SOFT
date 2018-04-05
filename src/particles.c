@@ -24,7 +24,8 @@ particle *particles_part;
 double particles_r0, particles_r1,
 	   particles_param10, particles_param11,
 	   particles_param20, particles_param21,
-	   particles_dparam1, particles_dparam2, particles_dr;
+	   particles_dparam1, particles_dparam2, particles_dr,
+       particles_effective_magnetic_axis;
 enum particles_radial_coordinate particles_rcoord;
 
 struct particles_paramspec *particles_param1spec, *particles_param2spec;
@@ -71,7 +72,7 @@ struct particles_paramspec params[NPARAMS] = {
 	particles_r,particles_param1,particles_param2,particles_dr,particles_dparam1,particles_dparam2, \
 	particles_done,particles_param1spec,particles_param2spec,particles_diffel,particles_gentype, \
 	particles_rcoord, particles_rinner, particles_router,particles_curr_r,particles_curr_param1, \
-	particles_curr_param2, particles_diffactor)
+	particles_curr_param2, particles_diffactor,particles_effective_magnetic_axis)
 
 void particles_set_param(double val0, double val1, int n, enum particles_inputtype type) {
 	int i;
@@ -378,6 +379,11 @@ void particles_init_run(int threadid, int nthreads, int mpi_rank, int nprocesses
 		particles_param1end = particles_param1n-1;
 		particles_param2end = particles_param2n-1;
 	}
+
+    /* Effective axis defaults to real magnetic axis.
+     * If drifts are enabled, this value will be updated
+     * when calculated in 'particles_generate'. */
+    particles_effective_magnetic_axis = magnetic_axis_r;
 }
 
 /**
@@ -801,7 +807,26 @@ double particles_find_axis_r(double ppar, double pperp) {
 		}
 	}
 
-	return (a+b)*0.5;
+    particles_effective_magnetic_axis = (a+b)*0.5;
+	return particles_effective_magnetic_axis;
+}
+/**
+ * Returns the r-coordinate of the "effective" magnetic
+ * axis (i.e. the point at which a guiding-center orbit
+ * is just a point in the poloidal plane). If orbit
+ * drifts are disabled, this is exactly the physical
+ * magnetic axis.
+ */
+double particles_get_effective_magnetic_axis_r(void) {
+    return particles_effective_magnetic_axis;
+}
+/**
+ * Returns the distance by which the guiding-center orbit
+ * is shifted away from a flux surface due to drifts.
+ * (NOTE: This value can be negative!)
+ */
+double particles_get_orbit_drift_shift(void) {
+    return (particles_get_effective_magnetic_axis_r()-magnetic_axis_r);
 }
 
 char *particles_param1_name(void) {

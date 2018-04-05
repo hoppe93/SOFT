@@ -457,7 +457,7 @@ int main(int argc, char *argv[]) {
 	/* Find the right tool settings to use */
 	for (i = 0; i < set->ntools; i++) {
 		if (!strcmp(set->tools[i].name, set->tool)) {
-			usetool->init(set->tools+i, set->sycouts, set->nsycouts);
+			usetool->init(set, set->tools+i, set->sycouts, set->nsycouts);
 			break;
 		}
 	}
@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 	/* If no specific settings were given for the tool, init it with empty settings
 	 * (if the tool requires settings, this may crash the program) */
 	if (i == set->ntools)
-		usetool->init(NULL, NULL, 0);
+		usetool->init(set, NULL, NULL, 0);
 
 	/**************************************************/
 	/* Specify tolerance of ODE Solver (if requested).*/

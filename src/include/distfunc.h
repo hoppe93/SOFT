@@ -14,10 +14,11 @@ typedef struct {
 	double ximin, ximax;/* Minimum/maximum (cosine of) pitch angle */
 	size_t nr, np, nxi; /* Number of radial values, number of momentum values, number of pitch angle values */
 	char *name, *desc;	/* Name and description of distribution function */
+    int logarithmic;    /* If non-zero, the 'value' field represents the logarithm of the distribution */
 } distfunc;
 
 #define DISTFUNC_BUFFER_SIZE 1024
-void distfunc_init_run(void);
+void distfunc_init_run(int);
 void distfunc_load(const char*);
 double distfunc_eval(double, double, double);
 
@@ -38,7 +39,7 @@ void df_readfile_unload(void);
 void df_readfile_load(const char*);
 
 /* Interpolation routines */
-void df_interp_init(distfunc*);
+void df_interp_init(distfunc*, int);
 void df_interp_init_run(void);
 double df_interp_eval(double, double, double);
 void df_interp_error_handler(const char*, const char*, int, int);

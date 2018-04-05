@@ -80,6 +80,8 @@ double particles_get_drho(void);
 double particles_get_dvel1(void);
 double particles_get_dvel2(void);
 double particles_find_axis_r(double, double);
+double particles_get_effective_magnetic_axis_r(void);
+double particles_get_orbit_drift_shift(void);
 char *particles_param1_name(void);
 char *particles_param2_name(void);
 void particles_set_progress(int);

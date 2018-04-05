@@ -8,7 +8,7 @@
 #include "settings.h"
 #include "tools.h"
 
-void orbit_init(struct general_settings*, struct general_settings*, int);
+void orbit_init(settings*, struct general_settings*, struct general_settings*, int);
 void orbit_init_run(unsigned int);
 ode_solution *orbit_init_particle(particle*);
 void orbit_deinit_run(void);

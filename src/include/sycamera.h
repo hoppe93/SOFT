@@ -99,7 +99,7 @@ extern const double sycamera_Zeta21_lookup_x[],  sycamera_Zeta21_lookup_y[];
 extern const double sycamera_Zeta21_lookup_Z[];
 
 /* Functions required by SOFT */
-void sycamera_init(struct general_settings*, struct general_settings*, int);
+void sycamera_init(settings*, struct general_settings*, struct general_settings*, int);
 void sycamera_init_run(unsigned int);
 ode_solution *sycamera_init_particle(particle*);
 void sycamera_deinit_run(void);
