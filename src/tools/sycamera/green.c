@@ -42,6 +42,7 @@ double sycout_green_dlambda;
 double *sycout_green_func;      /* Green's function */
 
 void sycout_green_init(struct general_settings *settings) {
+    int has_image = 0;
 	sycout_green_outformat = FILETYPE_SDT;
 	sycout_green_output = NULL;
 	sycout_green_pixels = 0;
@@ -136,6 +137,7 @@ void sycout_green_init(struct general_settings *settings) {
 
 	for (i = 0; i < SYCOUT_GREEN_MAXDIMS && sycout_green_format[i] != SYCOUT_GREEN_NONE; i++) {
 		if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEI) {
+            has_image = 1;
 			if (sycout_green_pixels == 0) {
 				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
 				exit(EXIT_FAILURE);
@@ -149,6 +151,7 @@ void sycout_green_init(struct general_settings *settings) {
 				exit(EXIT_FAILURE);
 			}
 		} else if (sycout_green_format[i] == SYCOUT_GREEN_IMAGEJ) {
+            has_image = 1;
 			if (sycout_green_pixels == 0) {
 				fprintf(stderr, "ERROR: (sycout green): Invalid number of pixels set: %zu.\n", sycout_green_pixels);
 				exit(EXIT_FAILURE);
@@ -163,6 +166,13 @@ void sycout_green_init(struct general_settings *settings) {
 			}
 		}
 	}
+
+    /* If the Green's function contains no pixel
+     * information, set number of pixels to zero.
+     * (Some parts of the code uses this to test
+     * if the GF contains an image) */
+    if (!has_image)
+        sycout_green_pixels = 0;
 
 	/* Was the output format set? */
 	if (outformat_set) {
@@ -432,19 +442,20 @@ void sycout_green_step(struct sycout_data *data) {
 			#pragma omp critical
 			{
                 if (sycout_green_stokesparams) {
-                    sycout_green_func[index+0] += stokp[0];
-                    sycout_green_func[index+1] += stokp[1];
-                    sycout_green_func[index+2] += stokp[2];
-                    sycout_green_func[index+3] += stokp[3];
-                } else
+                    sycout_green_func[index+0] += stokp[0] * diffel;
+                    sycout_green_func[index+1] += stokp[1] * diffel;
+                    sycout_green_func[index+2] += stokp[2] * diffel;
+                    sycout_green_func[index+3] += stokp[3] * diffel;
+                } else {
                     sycout_green_func[index] += data->brightness * diffel;
+                }
 			}
 		} else {
             if (sycout_green_stokesparams) {
-                sycout_green_func[index+0] += stokp[0];
-                sycout_green_func[index+1] += stokp[1];
-                sycout_green_func[index+2] += stokp[2];
-                sycout_green_func[index+3] += stokp[3];
+                sycout_green_func[index+0] += stokp[0] * diffel;
+                sycout_green_func[index+1] += stokp[1] * diffel;
+                sycout_green_func[index+2] += stokp[2] * diffel;
+                sycout_green_func[index+3] += stokp[3] * diffel;
             } else {
                 sycout_green_func[index] += data->brightness * diffel;
             }
