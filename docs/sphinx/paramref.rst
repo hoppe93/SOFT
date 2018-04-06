@@ -128,7 +128,7 @@ Particle settings
    | **Example line:** ``charge=4``
    | **Allowed values:** ``orbit``, ``sycamera``
 
-   The charge of the particle to simulate, in units of the elementary charge (:math:`e = 9.109\times 10^{-19}\,\mathrm{C}`).
+   The charge of the particle to simulate, in units of the elementary charge (:math:`e \approx 1.602\times 10^{-19}\,\mathrm{C}`).
    The default value is -1, i.e. the electron charge.
 
 .. option:: cospitch
