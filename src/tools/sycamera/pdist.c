@@ -134,8 +134,13 @@ double sycamera_pdist_int(
 	for (i = 0; i < sycamera_pdist_spectrum_resolution; i++) {
 		lambda = sycamera_pdist_wavelengths[i];
 		xi = xicf / lambda;
-		xi2K13 = gsl_spline_eval(sycamera_pdist_spec_spline1, xi, sycamera_pdist_spec_acc1);
-		xi2K23 = gsl_spline_eval(sycamera_pdist_spec_spline2, xi, sycamera_pdist_spec_acc2);
+        if (xi < sycamera_pdist_spec_lookup_xi[0] || xi > sycamera_pdist_spec_lookup_xi[sycamera_pdist_spec_lookup_count-1]) {
+            xi2K13 = 0.0;
+            xi2K23 = 0.0;
+        } else {
+            xi2K13 = gsl_spline_eval(sycamera_pdist_spec_spline1, xi, sycamera_pdist_spec_acc1);
+            xi2K23 = gsl_spline_eval(sycamera_pdist_spec_spline2, xi, sycamera_pdist_spec_acc2);
+        }
 
 		pT = pf_spec / (lambda*lambda);
 		Apar2 = pT*xi2K23;

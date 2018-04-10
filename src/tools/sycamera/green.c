@@ -175,7 +175,7 @@ void sycout_green_init(struct general_settings *settings) {
         sycout_green_pixels = 0;
 
 	/* Was the output format set? */
-	if (outformat_set) {
+    if (outformat_set) {
 		if (sycout_green_outformat == FILETYPE_UNKNOWN) {
 			fprintf(stderr, "ERROR: (sycout green): Unrecognized output file format specified.\n");
 			exit(-1);
