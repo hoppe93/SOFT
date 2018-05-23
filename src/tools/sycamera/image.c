@@ -78,6 +78,11 @@ void sycout_image_init(struct general_settings *settings) {
 		}
 	}
 
+    if (sycout_image_filename == NULL) {
+        fprintf(stderr, "ERROR: sycout image: No output filename has been given.\n");
+        exit(-1);
+    }
+
 	if (sycout_image_includeSeparatrix)
 		printf("Including separatrix data in sycout 'image' output.\n");
 	if (sycout_image_includeWall)

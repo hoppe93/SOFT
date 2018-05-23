@@ -203,13 +203,15 @@ vector *equation_GCM_rel_eq(double T, vector *Z) {
 
 	/* Calculate B* (effective B-field) */
     // dd->curlB is destroyed here!
+	//vector *B_eff = vaddf(dd->B, vmulsf(m/q*Z->val[3], dd->curlB));
+	vector *B_eff = vaddf(dd->B, vmulsf(Z->val[3]/q, dd->curlB));
+    /*
     vector *curlBhat = dd->curlB;
     curlBhat->val[0] = (curlBhat->val[0] + bhat->val[1]*dd->gradB->val[2] - bhat->val[2]*dd->gradB->val[1]) / dd->Babs;
     curlBhat->val[1] = (curlBhat->val[1] + bhat->val[2]*dd->gradB->val[0] - bhat->val[0]*dd->gradB->val[2]) / dd->Babs;
     curlBhat->val[2] = (curlBhat->val[2] + bhat->val[0]*dd->gradB->val[1] - bhat->val[1]*dd->gradB->val[0]) / dd->Babs;
-	//vector *B_eff = vaddf(dd->B, vmulsf(m/q*Z->val[3], dd->curlB));
-	//vector *B_eff = vaddf(dd->B, vmulsf(Z->val[3]/q, dd->curlB));
     vector *B_eff = vaddf(dd->B, vmulsf(Z->val[3]/q, curlBhat));
+    */
 
 	/* Get value of B* parallel to b^ */
 	double Beff_par = vdot3(B_eff, bhat);
