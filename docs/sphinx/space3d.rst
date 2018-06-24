@@ -27,7 +27,9 @@ Solving for surface-of-visibility
 Using SOFT it is possible to solve :eq:`bdotr`, accounting for the finite
 detector size. This is done by adding the sycout ``space3d`` (see
 `space3d <paramref.html#space3d>`__ for a parameter reference) to your SOFT
-runscript. One example definition of the sycout is as follows ::
+runscript. As with every sycout, you must also add a line ``product=space3d``
+to the ``tool sycamera`` block. One example definition of the sycout is a
+follows ::
 
   sycout space3d {
       output=outfile.mat
