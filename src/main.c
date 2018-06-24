@@ -7,6 +7,7 @@
 #include <sys/time.h>
 
 #include "config.h"
+#include "constants.h"
 #include "ctsv.h"
 //#include "diag.h"
 #include "domain.h"
@@ -285,7 +286,7 @@ double main_solve(particle *p, equation *eq, magnetic_handler *mh, tool *usetool
 		r = R[1] = hypot(x, y); Z[1] = z;
 		if (domain_check(R, Z) == DOMAIN_OUTSIDE) {
 			double v0 = hypot(p->v0[0], hypot(p->v0[1], p->v0[2])),
-				   gm = 1 / sqrt(1 - v0*v0),
+				   gm = 1 / sqrt(1 - v0*v0/(LIGHTSPEED*LIGHTSPEED)),
 				   p0 = gm * p->mass * v0,
 				   xi0= p->vpar / v0;
 			printf("Particle collided with device wall!  r0 = %e, p0 = %e, xi0 = %e\n", r0, p0, xi0);

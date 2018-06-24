@@ -53,7 +53,7 @@ Documentation of SOFT is available in two forms:
 SOFT is developed by the [Plasma Theory group](http://ft.nephy.chalmers.se/) at the Department of Physics, Chalmers University of Technology.
 
 ## How to cite
-When refering to SOFT, please cite the [SOFT paper](https://arxiv.org/abs/1709.00674):
+When refering to SOFT, please cite the [SOFT paper](https://doi.org/10.1088/1741-4326/aa9abb):
 ```
-[1] M. Hoppe, O. Embréus, R. A. Tinguely, R. S. Granetz, A. Stahl and T. Fülöp, "SOFT: a synthetic synchrotron diagnostic for runaway electrons", Accepted for publication in Nucl. Fusion.
+[1] M. Hoppe, O. Embréus, R. A. Tinguely, R. S. Granetz, A. Stahl and T. Fülöp, "SOFT: a synthetic synchrotron diagnostic for runaway electrons", Nucl. Fusion **58** 026032 [https://doi.org/10.1088/1741-4326/aa9abb].
 ```

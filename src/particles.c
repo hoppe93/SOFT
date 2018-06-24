@@ -486,9 +486,9 @@ particle *particles_generate_distributed(void) {
 	}
 
 	/* Last particle for this thread? */
-	if (particles_r == particles_rend &&
-		particles_param1 == particles_param1end &&
-		particles_param2 == particles_param2end)
+	if (particles_r == particles_rend-1 &&
+		particles_param1 == particles_param1end-1 &&
+		particles_param2 == particles_param2end-1)
 		particles_done = 1;
 
 	/* Move on to next particle */
@@ -555,9 +555,9 @@ particle *particles_generate_queue(void) {
 		}
 
 		/* Last particle for this thread? */
-		if (particles_g_r == particles_rn &&
-			particles_g_param1 == particles_param1n &&
-			particles_g_param2 == particles_param2n)
+		if (particles_g_r == particles_rn-1 &&
+			particles_g_param1 == particles_param1n-1 &&
+			particles_g_param2 == particles_param2n-1)
 			particles_g_done = 1;
 
 		/* Move on to next particle */
@@ -779,7 +779,7 @@ double particles_compute_X_pol(double ppar, double pperp, double r) {
 	return hypot(Xdotr, Xdotz) / Beffpar;
 }
 double particles_find_axis_r(double ppar, double pperp) {
-	double a = particles_rinner, b = particles_router, c, d, tol = 1e-4,
+	double a = particles_rinner, b = particles_router, c, d, tol = 1e-7,
 		   Xpol_c=0, Xpol_d=0,
 		   phi = 2 / (1+sqrt(5));
 
@@ -808,6 +808,14 @@ double particles_find_axis_r(double ppar, double pperp) {
 	}
 
     particles_effective_magnetic_axis = (a+b)*0.5;
+    /*
+    fprintf(
+        stderr, "%.16e,%.16e,%.16e\n",
+        ppar/(ELECTRONMASS*LIGHTSPEED), pperp/(ELECTRONMASS*LIGHTSPEED),
+        particles_effective_magnetic_axis
+    );
+    */
+
 	return particles_effective_magnetic_axis;
 }
 /**

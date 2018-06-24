@@ -504,7 +504,7 @@ The ``image`` sycout generates a camera image.
 space3d
 ^^^^^^^
 The ``space3d`` can be used to store 3D data about the points of space that contribute
-to an image. *Will be described in more detail in a separate section*
+to an image. A description about how to use it can be found in `space3d <space3d.html>`__.
 
 .. option:: output
 

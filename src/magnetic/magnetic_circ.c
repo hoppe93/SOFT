@@ -64,8 +64,8 @@ void magnetic_circ_init(struct general_settings *set) {
 	double *r = malloc(sizeof(double)*n),
 		   *z = malloc(sizeof(double)*n);
 	for (i = 0; i < n; i++) {
-		r[i] = mcpar->r * cos(2.0*PI * i / (double)n);
-		z[i] = mcpar->r * sin(2.0*PI * i / (double)n);
+		r[i] = mcpar->Rm + mcpar->r * cos(2.0*PI * i / (double)n);
+		z[i] = mcpar->Rm + mcpar->r * sin(2.0*PI * i / (double)n);
 	}
 
 	domain_set(r, z, n);
