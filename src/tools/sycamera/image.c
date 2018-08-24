@@ -349,7 +349,7 @@ void sycout_image_write(int mpi_rank, int nprocesses) {
 
 #ifdef USE_MPI
     printf("[%d] (sycout image) Done, sending 'output ready' to next process.\n", mpi_rank);
-    smpi_sor(SYCOUT_MPIID_POLSPECTROMETER);
+    smpi_sor(SYCOUT_MPIID_IMAGE);
 
 	if (mpi_rank == nprocesses-1) {
 #endif

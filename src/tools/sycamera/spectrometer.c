@@ -166,7 +166,7 @@ void sycout_spectrometer_write(int mpi_rank, int nprocesses) {
 
 #ifdef USE_MPI
     printf("[%d] (sycout spectrometer) Done, sending 'output ready' to next process.\n", mpi_rank);
-    smpi_sor(SYCOUT_MPIID_IMAGE);
+    smpi_sor(SYCOUT_MPIID_SPECTROMETER);
 
 	if (mpi_rank == nprocesses-1) {
 #endif

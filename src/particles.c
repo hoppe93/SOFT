@@ -45,6 +45,7 @@ int particles_g_r=0, particles_g_param1=0, particles_g_param2=0,
 	particles_g_done=0, particles_g_nextprogress=0,
 	particles_g_progressteps=0, particles_g_dprogress=0,
 	particles_g_progresscurr=0, particles_g_count=0,
+    particles_g_initialized=0,
 /* Account for particle drifts with the 'rdyn' parameter */
 	particles_g_drifts=0;
 
@@ -314,7 +315,12 @@ void particles_get_bounds6(int bounds[6]) {
  */
 void particles_init_run(int threadid, int nthreads, int mpi_rank, int nprocesses) {
 #ifndef USE_MPI	/* If NOT using MPI */
-	if (particles_gentype == PARTICLES_GT_QUEUE) return;
+	if (particles_gentype == PARTICLES_GT_QUEUE) {
+        particles_rend = particles_rn;
+        particles_param1end = particles_param1n;
+        particles_param2end = particles_param2n;
+        return;
+    }
 #endif
 
 	/* Compute maximum parameter index, chunk size and finally
@@ -330,6 +336,8 @@ void particles_init_run(int threadid, int nthreads, int mpi_rank, int nprocesses
 		parindmod = maxparind % nprocesses;
 	}
 #endif
+    
+    if (parindchunk == 0) parindchunk = 1;
 
 	/* Check if the problem cannot be divided evenly among
 	 * threads. If so, and if this is the first thread,
@@ -352,8 +360,10 @@ void particles_init_run(int threadid, int nthreads, int mpi_rank, int nprocesses
 	int parindend = parindstart + parindchunk - 1;
 
 #ifdef USE_MPI
-	if (particles_gentype == PARTICLES_GT_QUEUE)
+	if (particles_gentype == PARTICLES_GT_QUEUE) {
 		parindstart = parindchunk*mpi_rank;
+        parindend = parindstart + parindchunk - 1;
+    }
 #endif
 
 	particles_param2    = parindstart         / (particles_param1n*particles_rn);
@@ -379,6 +389,16 @@ void particles_init_run(int threadid, int nthreads, int mpi_rank, int nprocesses
 		particles_param1end = particles_param1n-1;
 		particles_param2end = particles_param2n-1;
 	}
+
+	#pragma omp critical
+    {
+        if (!particles_g_initialized) {
+            particles_g_param2      = particles_param2;
+            particles_g_param1      = particles_param1;
+            particles_g_r           = particles_r;
+            particles_g_initialized = 1;
+        }
+    }
 
     /* Effective axis defaults to real magnetic axis.
      * If drifts are enabled, this value will be updated
@@ -486,9 +506,9 @@ particle *particles_generate_distributed(void) {
 	}
 
 	/* Last particle for this thread? */
-	if (particles_r == particles_rend-1 &&
-		particles_param1 == particles_param1end-1 &&
-		particles_param2 == particles_param2end-1)
+	if (particles_r >= particles_rend &&
+		particles_param1 >= particles_param1end &&
+		particles_param2 >= particles_param2end)
 		particles_done = 1;
 
 	/* Move on to next particle */
@@ -555,9 +575,13 @@ particle *particles_generate_queue(void) {
 		}
 
 		/* Last particle for this thread? */
-		if (particles_g_r == particles_rn-1 &&
+		/*if (particles_g_r == particles_rn-1 &&
 			particles_g_param1 == particles_param1n-1 &&
 			particles_g_param2 == particles_param2n-1)
+			particles_g_done = 1;*/
+		if (particles_g_r >= particles_rend &&
+			particles_g_param1 >= particles_param1end &&
+			particles_g_param2 >= particles_param2end)
 			particles_g_done = 1;
 
 		/* Move on to next particle */
