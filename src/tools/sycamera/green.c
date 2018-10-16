@@ -552,8 +552,12 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 		if (sycout_green_hasrho) {
 			v = malloc(sizeof(double)*b[2]);
 
-			for (i = 0; i < b[2]; i++)
-				v[i] = b[0] + ((double)i)/((double)b[2]) * (b[1]-b[0]);
+            if (b[2] == 1)
+                v[0] = b[0];
+            else {
+                for (i = 0; i < b[2]; i++)
+                    v[i] = b[0] + ((double)i)/(b[2]-1.0) * (b[1]-b[0]);
+            }
 
 			sf->write_list(sf, "r", v, b[2]);
 			free(v);
@@ -566,8 +570,12 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 		if (sycout_green_hasvel1) {
 			v = malloc(sizeof(double)*b[5]);
 
-			for (i = 0; i < b[5]; i++)
-				v[i] = b[3] + ((double)i)/((double)b[5]) * (b[4]-b[3]);
+            if (b[5] == 1)
+                v[0] = b[0];
+            else {
+                for (i = 0; i < b[5]; i++)
+                    v[i] = b[3] + ((double)i)/(b[5]-1.0) * (b[4]-b[3]);
+            }
 
 			sf->write_list(sf, "param1", v, b[5]);
 			free(v);
@@ -580,8 +588,12 @@ void sycout_green_write(int mpi_rank, int nprocesses) {
 		if (sycout_green_hasvel2) {
 			v = malloc(sizeof(double)*b[8]);
 
-			for (i = 0; i < b[8]; i++)
-				v[i] = b[6] + ((double)i)/((double)b[8]) * (b[7]-b[6]);
+            if (b[8] == 1)
+                v[0] = b[6];
+            else {
+                for (i = 0; i < b[8]; i++)
+                    v[i] = b[6] + ((double)i)/(b[8]-1.0) * (b[7]-b[6]);
+            }
 
 			sf->write_list(sf, "param2", v, b[8]);
 			free(v);
