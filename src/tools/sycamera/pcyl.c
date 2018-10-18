@@ -97,7 +97,7 @@ double sycamera_pcyl_int(double ppar2, double pperp2, double Bmag, double mass, 
 	double Apar2, Aperp2;
 	
 	/* Compute polarization parameters */
-	double ir = 1/vnorm3(rcp),
+	/*double ir = 1/vnorm3(rcp),
 		   ne = vdot3(rcp, e2)*ir,
 		   nb = vdot3(rcp, vhat)*ir,
 		   ve = vdot3(vhat, e2),
@@ -105,6 +105,21 @@ double sycamera_pcyl_int(double ppar2, double pperp2, double Bmag, double mass, 
 		   nb2 = nb*nb,
 		   divfac = 1.0 / sqrt((1-nb2)*(1-ne2)),
 		   cosb = (ve - nb*ne) * divfac,
+		   sinb = (
+			   e2->val[0] * (vhat->val[1]*rcp->val[2] - vhat->val[2]*rcp->val[1]) +
+			   e2->val[1] * (vhat->val[2]*rcp->val[0] - vhat->val[0]*rcp->val[2]) +
+			   e2->val[2] * (vhat->val[0]*rcp->val[1] - vhat->val[1]*rcp->val[0])
+		   )*divfac*ir;*/
+	double ir = 1/vnorm3(rcp),
+		   nb = vdot3(rcp, vhat)*ir,
+           inDotNhat = 1.0 / (vdot3(rcp, ddet) * ir),
+		   nb2 = nb*nb,
+		   divfac = 1.0 / sqrt(1-nb2),
+		   cosb =-(
+			   e1->val[0] * (vhat->val[1]*rcp->val[2] - vhat->val[2]*rcp->val[1]) +
+			   e1->val[1] * (vhat->val[2]*rcp->val[0] - vhat->val[0]*rcp->val[2]) +
+			   e1->val[2] * (vhat->val[0]*rcp->val[1] - vhat->val[1]*rcp->val[0])
+           )*divfac*ir,
 		   sinb = (
 			   e2->val[0] * (vhat->val[1]*rcp->val[2] - vhat->val[2]*rcp->val[1]) +
 			   e2->val[1] * (vhat->val[2]*rcp->val[0] - vhat->val[0]*rcp->val[2]) +
@@ -165,10 +180,10 @@ double sycamera_pcyl_int(double ppar2, double pperp2, double Bmag, double mass, 
 		sycamera_pcyl_polarization[3] += pol4;
     }
 
-	sycamera_pcyl_polarization[0] *= sycamera_pcyl_dl;
-	sycamera_pcyl_polarization[1] *= sycamera_pcyl_dl;
-	sycamera_pcyl_polarization[2] *= sycamera_pcyl_dl;
-	sycamera_pcyl_polarization[3] *= sycamera_pcyl_dl;
+	sycamera_pcyl_polarization[0] *= sycamera_pcyl_dl * inDotNhat;
+	sycamera_pcyl_polarization[1] *= sycamera_pcyl_dl * inDotNhat;
+	sycamera_pcyl_polarization[2] *= sycamera_pcyl_dl * inDotNhat;
+	sycamera_pcyl_polarization[3] *= sycamera_pcyl_dl * inDotNhat;
 
     return sum * sycamera_pcyl_dl;
 }
