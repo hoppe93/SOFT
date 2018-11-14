@@ -53,14 +53,16 @@ available, please consult the
 `SOFT manual <https://github.com/hoppe93/SOFT/master/docs/manual/Manual.pdf>`_. Further examples
 of ``pi`` files for different purposes are:
 
-* `distpi <http://ft.nephy.chalmers.se/~hoppe/soft/examples/distpi>`_ -- Illustrates how SOFT can
+* `distpi <https://github.com/hoppe93/SOFT/blob/master/examples/distpi>`_ -- Illustrates how SOFT can
   be run together with a runaway distribution function.
-* `hollowpi <http://ft.nephy.chalmers.se/~hoppe/soft/examples/hollowpi>`_ -- An example of
+* `hollowpi <https://github.com/hoppe93/SOFT/blob/master/examples/hollowpi>`_ -- An example of
   simulating a hollow electron beam.
-* `simplepi <http://ft.nephy.chalmers.se/~hoppe/soft/examples/simplepi>`_ -- The basic example
+* `simplepi <https://github.com/hoppe93/SOFT/blob/master/examples/simplepi>`_ -- The basic example
   shown above, setting just the most important options.
-* `orbitpi <http://ft.nephy.chalmers.se/~hoppe/soft/examples/orbitpi>`_ -- Shows how to use the
+* `orbitpi <https://github.com/hoppe93/SOFT/blob/master/examples/orbitpi>`_ -- Shows how to use the
   orbit following part of SOFT to simulate particle orbits.
+
+
 
 Basic syntax
 ------------
@@ -167,3 +169,4 @@ date there are five different *sycout* modules, namely
 |              | when they emitted towards the detector. Allows visualizing the toroidal          |
 |              | distribution of particles that are visible to the detector.                      |
 +--------------+----------------------------------------------------------------------------------+
+

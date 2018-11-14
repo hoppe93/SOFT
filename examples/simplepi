@@ -1,0 +1,35 @@
+# Basic SOFT pi file
+useequation=guiding-center-relativistic
+usetool=sycamera
+
+# Specify magnetic field
+magnetic_field=circular   # Use analytic magnetic field
+magnetic circular { B0=5; major_radius=0.68; minor_radius=0.22; safety_factor=1; }
+domain_has_outer_wall=no  # Remove outer device walls to prevent from blocking radiation
+
+# Set phase-space
+particles {
+    t=0,-1
+    rdyn=0.84,1000
+    p=3e7,3e7,1
+    pitch=0.15,0.15,1
+}
+
+# Specify properties for the sycamera tool
+tool sycamera {
+    aperture=0.006                 # Side length (in m) of (square) detector
+    cone=delta                     # Use the cone model (not full angular distribution)
+    direction=0,1,0                # Normal vector of detector surface (not necessarily normalized)
+    position=0,-1.069,0            # Position vector of detector, relative tokamak point of symmtetry
+    product=image                  # Output a synchrotron image when done
+    radiation=synchrotron_spectrum # Take spectrum of radiation into account
+    spectrum=5e-7,1e-6             # Detector spectral range
+    toroidal_resolution=3500       # Number of steps in toroidal integral
+    vision_angle=2.0               # Size of field-of-view
+}
+
+# Specify properties for the 'image' sycout
+sycout image {
+    pixels=1000
+    name=image.dat
+}
