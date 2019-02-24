@@ -1,3 +1,5 @@
+The SDT format
+**************
 The SDT format (for *SOFT Descriptive Text* or *Self-Descriptive Text* or
 *Semi-Descriptive Text*) was developed in order to import magnetic
 field data from systems with no HDF5 or MATLAB support. It is a very simple
