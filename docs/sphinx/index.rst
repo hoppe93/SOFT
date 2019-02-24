@@ -25,6 +25,7 @@ mathematical details of how SOFT is implemented, you should look into the
   polarization
   space3d
   paramref
+  sdt
   troubleshooting
 
 
