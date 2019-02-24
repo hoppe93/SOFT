@@ -1,0 +1,21 @@
+useequation=guiding-center-relativistic
+#useequation=particle-relativistic;
+usetool=orbit 
+
+magnetic_field=circular   # Use analytic magnetic field
+magnetic circular { B0=5; major_radius=0.68; minor_radius=0.22; safety_factor=1; }
+domain_has_outer_wall=no
+
+particles {
+	gc_position=yes             # yes = we're specifying GC position,
+                                # no  = we're specifying particle position
+	t=0,-1                      # One poloidal orbit (works only for GC orbits)
+	mass=4                      # In unified atomic mass units (u)
+	charge=2                    # In elementary charges
+	r=0.75,0.75,1 
+	p=1.61045e8,1.61045e8,1     # In eV/c
+	cospitch=0.40,0.40,1
+}
+tool orbit {
+	output=orbit.csv
+}
