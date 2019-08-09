@@ -1,4 +1,6 @@
 # SOFT
+**This code is no longer supported. Instead, we recommend switching to the new and improved version 2 which is available at https://github.com/hoppe93/SOFT2.**
+
 SOFT (for "Synchrotron-detecting Orbit Following Toolkit") is a synthetic synchrotron diagnostic that can be used to study the synchrotron radiation emitted by runaway electrons in tokamaks. By taking the effect of electron orbits into account, SOFT can accurately reproduce synchrotron images and spectra as obtained in experiments, assuming the runaway electron distribution function is known.
 
 Basic documentation of SOFT is available at [http://soft.readthedocs.io/en/latest/].
